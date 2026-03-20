@@ -15,6 +15,20 @@
     <UseWPF>true</UseWPF>
     <UseWindowsForms>true</UseWindowsForms>
     <ApplicationIcon />
+
+    <!--
+      Portable Single-File (self-contained) für Windows x64:
+      - PublishSingleFile: eine EXE (plus ggf. kleine Extrakt-Hilfe beim ersten Start).
+      - SelfContained: .NET-Runtime wird mitgeliefert → auf Ziel-PC keine separate Runtime nötig.
+      - RuntimeIdentifier win-x64: festes Ziel; Build/Publish landen unter …/win-x64/ (auch bei dotnet build).
+      - PublishTrimmed false: WPF/XAML bricht mit Trimming oft; absichtlich aus.
+      - IncludeNativeLibrariesForSelfExtract: native DLLs in die Single-File-Bündelung für Selbstextraktion.
+    -->
+    <PublishSingleFile>true</PublishSingleFile>
+    <SelfContained>true</SelfContained>
+    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+    <PublishTrimmed>false</PublishTrimmed>
+    <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
   </PropertyGroup>
 
   <ItemGroup>
