@@ -438,6 +438,8 @@ public sealed class MainViewModel : ViewModelBase
                 LastOperation = "OK: " + result.Message;
                 _log.Info($"Profil angewendet: {SelectedProfile.Name}");
                 System.Windows.MessageBox.Show(result.Message, "Erfolg", MessageBoxButton.OK, MessageBoxImage.Information);
+                await Task.Delay(1300, CancellationToken.None);
+                RefreshAdapters();
             }
             else
             {
@@ -450,7 +452,6 @@ public sealed class MainViewModel : ViewModelBase
         finally
         {
             IsBusy = false;
-            RefreshAdapters();
         }
     }
 
