@@ -1,9 +1,9 @@
-﻿
+
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.0.31903.59
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ProfileIpSwitcher", "ProfileIpSwitcher\ProfileIpSwitcher.csproj", "{8F79D28B-25DE-4FCE-99A1-203D9E54640A}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "IP-Changer", "IP-Changer\IP-Changer.csproj", "{8F79D28B-25DE-4FCE-99A1-203D9E54640A}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

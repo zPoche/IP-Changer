@@ -3,6 +3,6 @@
   "minimizeToTrayInsteadOfClose": false,
   "checkForUpdatesOnStartup": false,
   "skipDoubleClickApplyConfirmation": false,
-  "updateCheckUrl": "https://github.com/example/ProfileIpSwitcher/releases/latest",
-  "gitHubReleasesUrl": "https://github.com/example/ProfileIpSwitcher/releases"
+  "updateCheckUrl": "https://github.com/Benutzer/IP-Changer",
+  "gitHubReleasesUrl": "https://github.com/Benutzer/IP-Changer/releases"
 }

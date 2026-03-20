@@ -25,10 +25,12 @@
             <CheckBox Content="Beim Doppelklick auf ein Profil nicht nachfragen"
                       IsChecked="{Binding SkipDoubleClickApplyConfirmation}"
                       Margin="0,0,0,16" />
-            <TextBlock Text="URL für Update-Check (Platzhalter)" Margin="0,0,0,4" />
+            <TextBlock TextWrapping="Wrap" Margin="0,0,0,4">
+                Update-Quelle: GitHub-Repo (z. B. https://github.com/Benutzer/IP-Changer) oder direkte JSON-URL
+            </TextBlock>
             <TextBox Text="{Binding UpdateCheckUrl, UpdateSourceTrigger=PropertyChanged}"
                      Margin="0,0,0,12" />
-            <TextBlock Text="GitHub-Releases-Seite" Margin="0,0,0,4" />
+            <TextBlock Text="Releases-Seite (Link „Im Browser öffnen“)" Margin="0,0,0,4" />
             <TextBox Text="{Binding GitHubReleasesUrl, UpdateSourceTrigger=PropertyChanged}" />
         </StackPanel>
         <StackPanel Grid.Row="1"

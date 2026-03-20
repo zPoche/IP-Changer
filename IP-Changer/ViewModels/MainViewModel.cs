@@ -57,7 +57,7 @@ public sealed class MainViewModel : ViewModelBase
         ExportCommand = new RelayCommand(_ => ExportProfiles());
         ImportCommand = new RelayCommand(_ => ImportProfiles());
         OpenSettingsCommand = new RelayCommand(_ => OpenSettings());
-        CheckUpdatesCommand = new AsyncRelayCommand(_ => CheckUpdatesAsync());
+        CheckUpdatesCommand = new AsyncRelayCommand(_ => CheckUpdatesAsync(fromStartup: false));
 
         LoadProfiles();
         Settings = _settingsService.Load();
@@ -470,15 +470,47 @@ public sealed class MainViewModel : ViewModelBase
         LastOperation = "Einstellungen gespeichert.";
     }
 
-    private async Task CheckUpdatesAsync()
+    private async Task CheckUpdatesAsync(bool fromStartup)
     {
         var s = _settingsService.Load();
         var r = await _updates.CheckAsync(s.UpdateCheckUrl);
-        System.Windows.MessageBox.Show(
-            $"Aktuelle Version: {r.CurrentVersion}\n{r.Message}\n\nReleases: {r.ReleasesPageUrl}",
-            "Updates",
-            MessageBoxButton.OK,
-            MessageBoxImage.Information);
+
+        if (!r.Success)
+        {
+            if (!fromStartup)
+            {
+                System.Windows.MessageBox.Show(r.Message, "Update-Prüfung", MessageBoxButton.OK,
+                    MessageBoxImage.Warning);
+            }
+            else
+                _log.Warn("Update (Start): " + r.Message);
+
+            LastOperation = "Update-Check fehlgeschlagen.";
+            return;
+        }
+
+        if (r.UpdateAvailable)
+        {
+            LastOperation = $"Update verfügbar: {r.LatestVersion}";
+            var open = System.Windows.MessageBox.Show(
+                $"{r.Message}\n\nRelease-Seite im Browser öffnen?",
+                "Update verfügbar",
+                MessageBoxButton.YesNo,
+                MessageBoxImage.Information);
+            if (open == MessageBoxResult.Yes)
+                UpdateCheckService.OpenReleasesPage(r.ReleasesPageUrl);
+            return;
+        }
+
+        LastOperation = "Kein Update verfügbar.";
+        if (!fromStartup)
+        {
+            System.Windows.MessageBox.Show(
+                $"{r.Message}\n\nInstalliert: {r.CurrentVersion}",
+                "Update-Prüfung",
+                MessageBoxButton.OK,
+                MessageBoxImage.Information);
+        }
     }
 
     private static string FormatMode(IpAddressMode m) => m == IpAddressMode.Dhcp ? "DHCP" : "Statisch";
@@ -487,6 +519,6 @@ public sealed class MainViewModel : ViewModelBase
     {
         var s = _settingsService.Load();
         if (!s.CheckForUpdatesOnStartup) return;
-        _ = CheckUpdatesAsync();
+        _ = CheckUpdatesAsync(fromStartup: true);
     }
 }

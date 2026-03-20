@@ -11,8 +11,8 @@ public class AppSettings
     /// <summary>Keine Rückfrage beim Doppelklick auf ein Profil (direkt anwenden).</summary>
     public bool SkipDoubleClickApplyConfirmation { get; set; }
 
-    /// <summary>Basis-URL oder JSON-Endpunkt für Update-Checks (Platzhalter).</summary>
-    public string UpdateCheckUrl { get; set; } = "https://github.com/example/ProfileIpSwitcher/releases/latest";
+    /// <summary>GitHub-Repo-URL (z. B. https://github.com/Benutzer/IP-Changer) oder direkte JSON-URL für version.json.</summary>
+    public string UpdateCheckUrl { get; set; } = "https://github.com/zPoche/IP-Changer";
 
-    public string GitHubReleasesUrl { get; set; } = "https://github.com/example/ProfileIpSwitcher/releases";
+    public string GitHubReleasesUrl { get; set; } = "https://github.com/zPoche/IP-Changer/releases";
 }
