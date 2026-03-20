@@ -5,7 +5,7 @@
                  xmlns:b="http://schemas.microsoft.com/xaml/behaviors"
                  xmlns:models="clr-namespace:ProfileIpSwitcher.Models"
                  xmlns:c="clr-namespace:ProfileIpSwitcher.Converters"
-                 Title="ProfileIpSwitcher"
+                 Title="IP-Changer"
                  Height="700"
                  Width="1000"
                  MinHeight="560"
@@ -45,6 +45,8 @@
             <MenuItem Header="_Extras">
                 <MenuItem Header="_Einstellungen…" Command="{Binding OpenSettingsCommand}" />
                 <MenuItem Header="Nach _Updates suchen…" Command="{Binding CheckUpdatesCommand}" />
+                <Separator />
+                <MenuItem Header="_Info…" Command="{Binding OpenAboutCommand}" />
             </MenuItem>
         </Menu>
 

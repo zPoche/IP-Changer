@@ -44,7 +44,7 @@ public partial class MainWindow
     {
         _notifyIcon = new NotifyIcon
         {
-            Text = "ProfileIpSwitcher",
+            Text = "IP-Changer",
             Visible = false
         };
 
@@ -66,7 +66,7 @@ public partial class MainWindow
         if (_notifyIcon == null || _viewModel == null) return;
 
         var menu = new ContextMenuStrip();
-        menu.Items.Add("ProfileIpSwitcher öffnen", null, (_, _) => ShowFromTray());
+        menu.Items.Add("IP-Changer öffnen", null, (_, _) => ShowFromTray());
         menu.Items.Add(new ToolStripSeparator());
 
         foreach (var p in _viewModel.GetFavoriteProfiles())
@@ -77,7 +77,7 @@ public partial class MainWindow
                 try
                 {
                     await _viewModel!.ApplyProfileFromTrayAsync(profile);
-                    _notifyIcon!.ShowBalloonTip(4000, "ProfileIpSwitcher", "Profil angewendet.", ToolTipIcon.Info);
+                    _notifyIcon!.ShowBalloonTip(4000, "IP-Changer", "Profil angewendet.", ToolTipIcon.Info);
                 }
                 catch (Exception ex)
                 {

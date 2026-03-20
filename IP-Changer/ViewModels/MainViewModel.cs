@@ -58,6 +58,7 @@ public sealed class MainViewModel : ViewModelBase
         ImportCommand = new RelayCommand(_ => ImportProfiles());
         OpenSettingsCommand = new RelayCommand(_ => OpenSettings());
         CheckUpdatesCommand = new AsyncRelayCommand(_ => CheckUpdatesAsync(fromStartup: false));
+        OpenAboutCommand = new RelayCommand(_ => OpenAbout());
 
         LoadProfiles();
         Settings = _settingsService.Load();
@@ -242,6 +243,7 @@ public sealed class MainViewModel : ViewModelBase
     public ICommand ImportCommand { get; }
     public ICommand OpenSettingsCommand { get; }
     public ICommand CheckUpdatesCommand { get; }
+    public ICommand OpenAboutCommand { get; }
 
     public IReadOnlyList<NetworkProfile> GetFavoriteProfiles() =>
         Profiles.Where(p => p.IsFavorite).ToList();
@@ -524,6 +526,12 @@ public sealed class MainViewModel : ViewModelBase
         Settings = updated;
         Raise(nameof(Settings));
         LastOperation = "Einstellungen gespeichert.";
+    }
+
+    private void OpenAbout()
+    {
+        var owner = System.Windows.Application.Current.MainWindow;
+        AboutWindow.ShowDialog(owner);
     }
 
     private async Task CheckUpdatesAsync(bool fromStartup)

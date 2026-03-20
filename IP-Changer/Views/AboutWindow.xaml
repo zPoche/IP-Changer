@@ -1,0 +1,68 @@
+<mah:MetroWindow x:Class="ProfileIpSwitcher.Views.AboutWindow"
+                 xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                 xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                 xmlns:mah="http://metro.mahapps.com/winfx/xaml/controls"
+                 Title="Info – IP-Changer"
+                 Height="340"
+                 Width="420"
+                 ResizeMode="NoResize"
+                 WindowStartupLocation="CenterOwner"
+                 GlowBrush="{DynamicResource MahApps.Brushes.Accent}"
+                 Loaded="AboutWindow_Loaded">
+    <Grid Margin="20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <StackPanel Grid.Row="0"
+                    VerticalAlignment="Center"
+                    HorizontalAlignment="Center">
+            <TextBlock Text="IP-Changer"
+                       FontSize="26"
+                       FontWeight="Light"
+                       HorizontalAlignment="Center" />
+            <TextBlock Text="Netzwerkprofil-Switcher für Windows"
+                       FontSize="12"
+                       Opacity="0.75"
+                       HorizontalAlignment="Center"
+                       TextAlignment="Center"
+                       Margin="0,6,0,20" />
+            <TextBlock x:Name="VersionTextBlock"
+                       HorizontalAlignment="Center"
+                       Margin="0,0,0,6"
+                       TextWrapping="Wrap"
+                       TextAlignment="Center" />
+            <TextBlock HorizontalAlignment="Center"
+                       Margin="0,0,0,6"
+                       TextAlignment="Center">
+                <Run Text="Creator: " />
+                <Run Text="zPoche" FontWeight="SemiBold" />
+            </TextBlock>
+            <TextBlock HorizontalAlignment="Center"
+                       TextAlignment="Center">
+                <Hyperlink Click="GitHub_Click"
+                           Foreground="{DynamicResource MahApps.Brushes.AccentBase}">
+                    https://github.com/zPoche/IP-Changer
+                </Hyperlink>
+            </TextBlock>
+            <TextBlock Text=".NET 8 · WPF · MahApps.Metro"
+                       HorizontalAlignment="Center"
+                       Margin="0,22,0,0"
+                       Opacity="0.5"
+                       FontSize="11"
+                       TextAlignment="Center" />
+        </StackPanel>
+
+        <Button Grid.Row="1"
+                Content="Schließen"
+                HorizontalAlignment="Right"
+                Margin="0,12,0,0"
+                Padding="18,8"
+                MinWidth="100"
+                Style="{DynamicResource MahApps.Styles.Button.MetroAccent}"
+                Click="Close_Click"
+                IsDefault="True"
+                IsCancel="True" />
+    </Grid>
+</mah:MetroWindow>
