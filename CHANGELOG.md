@@ -2,6 +2,13 @@
 
 Alle wichtigen Änderungen werden hier dokumentiert.
 
+## [1.0.3] – 2026-03-20
+
+### Geändert
+
+- Anzeigename **IP-Changer** (Fenstertitel, Infobereich)
+- Menü **Extras → Info…** mit About-Dialog (Version, GitHub-Link)
+
 ## [1.0.2] – 2026-03-20
 
 ### Behoben
