@@ -17,26 +17,30 @@ dotnet run --project IP-Changer\IP-Changer.csproj
 Die Build-Ausgabe liegt unter `IP-Changer\bin\Debug\net8.0-windows\` (bzw. `Release`). Die EXE heißt weiterhin **`ProfileIpSwitcher.exe`** (AssemblyName in der `.csproj`).  
 **Hinweis:** Über `app.manifest` ist `requireAdministrator` gesetzt – beim Debuggen startet Visual Studio/Cursor die App ggf. mit Nachfrage nach Adminrechten.
 
-### Release-Paket bauen (ZIP zum Hochladen)
+### Release-Paket lokal (portable Single-File, self-contained)
 
 ```powershell
 cd IP-Changer
-dotnet publish IP-Changer\IP-Changer.csproj -c Release -r win-x64 --self-contained false -o .\publish
+dotnet publish IP-Changer\IP-Changer.csproj -c Release -r win-x64 -o .\publish
 ```
 
-Ordner `publish` enthält u. a. `ProfileIpSwitcher.exe` – als ZIP packen und bei GitHub unter **Releases** anhängen.
+Ergebnis: `publish\ProfileIpSwitcher.exe` (eine große, portable EXE inkl. .NET-Runtime).
 
-## GitHub-Release (Alpha / Version)
+## GitHub-Release (Tag + automatisches ZIP)
 
 1. Änderungen committen und pushen (`main`).
-2. **Tag setzen** (muss zum Update-Check passen, mit `v`):
+2. **Tag setzen und pushen** (muss zum Update-Check passen, mit `v`):
 
    ```powershell
-   git tag -a v1.0.0-alpha.1 -m "Alpha 1.0"
-   git push origin v1.0.0-alpha.1
+   git tag -a v1.0.0-alpha.2 -m "Release notes kurz"
+   git push origin v1.0.0-alpha.2
    ```
 
-3. Auf GitHub: **Releases → Draft a new release** → Tag `v1.0.0-alpha.1` wählen, Titel z. B. `1.0.0-alpha.1`, Beschreibung aus `CHANGELOG.md`, **ZIP aus `publish`** anhängen, veröffentlichen.
+3. **GitHub Actions** (Workflow [`.github/workflows/release.yml`](.github/workflows/release.yml)) baut auf `windows-latest`, erstellt/aktualisiert das **Release** zum Tag und hängt **`ProfileIpSwitcher-<Tag>-win-x64-self-contained.zip`** (nur die EXE darin) an.
+
+**Repo-Einstellung:** unter *Settings → Actions → General → Workflow permissions* muss **Read and write permissions** erlaubt sein (sonst kann der Workflow kein Release anlegen).
+
+**Manuell:** Du kannst weiterhin unter **Releases** von Hand Dateien anhängen; der Workflow macht es bei jedem neuen `v*`-Tag automatisch.
 
 Die App vergleicht die installierte Assembly-Version mit dem **neuesten Release-Tag** auf GitHub.
 
