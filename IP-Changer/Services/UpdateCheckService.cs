@@ -72,32 +72,23 @@ public sealed class UpdateCheckService : IUpdateCheckService
                     };
                 }
 
-                var apiUrl = $"https://api.github.com/repos/{owner}/{repo}/releases/latest";
-                _log.Info($"Update-Check: GitHub API {apiUrl}");
-
-                using var response = await http.GetAsync(apiUrl, cancellationToken);
-                var body = await response.Content.ReadAsStringAsync(cancellationToken);
-
-                if (!response.IsSuccessStatusCode)
+                var resolved = await TryResolveLatestGitHubVersionAsync(http, owner, repo, cancellationToken);
+                if (!resolved.Found)
                 {
-                    _log.Warn($"GitHub API {(int)response.StatusCode}: {body}");
                     return new UpdateCheckResult
                     {
                         Success = false,
                         CurrentVersion = currentDisplay,
-                        Message = response.StatusCode == System.Net.HttpStatusCode.NotFound
-                            ? "Kein GitHub-Release gefunden (noch kein Release im Repository?)."
-                            : $"GitHub antwortete mit {(int)response.StatusCode}. Prüfen Sie Repo-Name und Netzwerk.",
+                        Message = resolved.ErrorMessage ??
+                                  "Keine Version auf GitHub gefunden. Legen Sie unter „Releases“ ein veröffentlichtes Release an " +
+                                  "(kein Entwurf) oder setzen Sie mindestens einen Tag (z. B. v1.0.0-alpha.1). " +
+                                  "Prüfen Sie die Repo-URL in den Einstellungen.",
                         ReleasesPageUrl = $"https://github.com/{owner}/{repo}/releases"
                     };
                 }
 
-                using var doc = JsonDocument.Parse(body);
-                var root = doc.RootElement;
-                var tag = root.GetProperty("tag_name").GetString() ?? "";
-                latestRaw = NormalizeVersionString(tag);
-                releaseHtmlUrl = root.TryGetProperty("html_url", out var h) ? h.GetString() : null;
-                releaseHtmlUrl ??= $"https://github.com/{owner}/{repo}/releases/latest";
+                latestRaw = NormalizeVersionString(resolved.TagName);
+                releaseHtmlUrl = resolved.ReleaseHtmlUrl ?? $"https://github.com/{owner}/{repo}/releases";
             }
 
             if (string.IsNullOrWhiteSpace(latestRaw))
@@ -155,6 +146,131 @@ public sealed class UpdateCheckService : IUpdateCheckService
                 ReleasesPageUrl = releasesFallback
             };
         }
+    }
+
+    private sealed record GitHubVersionResolution(bool Found, string? TagName, string? ReleaseHtmlUrl, string? ErrorMessage);
+
+    /// <summary>
+    /// GitHub: zuerst /releases/latest, dann erste veröffentlichte Release aus der Liste, dann Tags.
+    /// </summary>
+    private async Task<GitHubVersionResolution> TryResolveLatestGitHubVersionAsync(
+        HttpClient http, string owner, string repo, CancellationToken ct)
+    {
+        var releasesPage = $"https://github.com/{owner}/{repo}/releases";
+
+        async Task<string?> GetBodyAsync(string requestUrl)
+        {
+            using var response = await http.GetAsync(requestUrl, ct);
+            var body = await response.Content.ReadAsStringAsync(ct);
+            if (!response.IsSuccessStatusCode)
+            {
+                _log.Warn($"GitHub {requestUrl} → {(int)response.StatusCode}");
+                return null;
+            }
+
+            return body;
+        }
+
+        // 1) Offizielles „latest“-Release
+        var latestUrl = $"https://api.github.com/repos/{owner}/{repo}/releases/latest";
+        _log.Info($"Update-Check: {latestUrl}");
+        var latestBody = await GetBodyAsync(latestUrl);
+        if (latestBody != null)
+        {
+            try
+            {
+                using var doc = JsonDocument.Parse(latestBody);
+                var root = doc.RootElement;
+                if (root.TryGetProperty("tag_name", out var tn))
+                {
+                    var tag = tn.GetString();
+                    if (!string.IsNullOrWhiteSpace(tag))
+                    {
+                        var html = root.TryGetProperty("html_url", out var h) ? h.GetString() : null;
+                        return new GitHubVersionResolution(true, tag, html ?? releasesPage, null);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                _log.Warn("releases/latest JSON: " + ex.Message);
+            }
+        }
+
+        // 2) Alle Releases (neuestes veröffentlichtes, kein Entwurf)
+        var listUrl = $"https://api.github.com/repos/{owner}/{repo}/releases?per_page=20";
+        _log.Info($"Update-Check: {listUrl}");
+        var listBody = await GetBodyAsync(listUrl);
+        if (listBody != null)
+        {
+            try
+            {
+                using var doc = JsonDocument.Parse(listBody);
+                if (doc.RootElement.ValueKind == JsonValueKind.Array)
+                {
+                    foreach (var rel in doc.RootElement.EnumerateArray())
+                    {
+                        if (rel.TryGetProperty("draft", out var draft) && draft.GetBoolean())
+                            continue;
+                        if (!rel.TryGetProperty("tag_name", out var tn2)) continue;
+                        var tag = tn2.GetString();
+                        if (string.IsNullOrWhiteSpace(tag)) continue;
+                        var html = rel.TryGetProperty("html_url", out var h2) ? h2.GetString() : null;
+                        return new GitHubVersionResolution(true, tag, html ?? releasesPage, null);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                _log.Warn("releases list JSON: " + ex.Message);
+            }
+        }
+
+        // 3) Tags (wenn nur getaggt, aber kein Release-Objekt)
+        var tagsUrl = $"https://api.github.com/repos/{owner}/{repo}/tags?per_page=40";
+        _log.Info($"Update-Check: {tagsUrl}");
+        var tagsBody = await GetBodyAsync(tagsUrl);
+        if (tagsBody != null)
+        {
+            try
+            {
+                using var doc = JsonDocument.Parse(tagsBody);
+                if (doc.RootElement.ValueKind == JsonValueKind.Array)
+                {
+                    foreach (var el in doc.RootElement.EnumerateArray())
+                    {
+                        if (!el.TryGetProperty("name", out var nameEl)) continue;
+                        var name = nameEl.GetString()?.Trim();
+                        if (string.IsNullOrEmpty(name)) continue;
+                        if (!Regex.IsMatch(name, @"^v?\d", RegexOptions.IgnoreCase)) continue;
+                        return new GitHubVersionResolution(true, name, releasesPage, null);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                _log.Warn("tags JSON: " + ex.Message);
+            }
+        }
+
+        // 4) Repo existiert?
+        var repoUrl = $"https://api.github.com/repos/{owner}/{repo}";
+        using var repoCheck = await http.GetAsync(repoUrl, ct);
+        if (repoCheck.StatusCode == System.Net.HttpStatusCode.NotFound)
+        {
+            return new GitHubVersionResolution(false, null, null,
+                $"Repository „{owner}/{repo}“ wurde nicht gefunden. URL in den Einstellungen prüfen (Groß-/Kleinschreibung).");
+        }
+
+        if (!repoCheck.IsSuccessStatusCode)
+        {
+            var err = await repoCheck.Content.ReadAsStringAsync(ct);
+            _log.Warn($"GitHub repo check {(int)repoCheck.StatusCode}: {err}");
+            return new GitHubVersionResolution(false, null, null,
+                $"GitHub antwortete mit {(int)repoCheck.StatusCode}. Netzwerk oder API-Limit prüfen.");
+        }
+
+        return new GitHubVersionResolution(false, null, null, null);
     }
 
     private static bool IsJsonEndpoint(string url)
