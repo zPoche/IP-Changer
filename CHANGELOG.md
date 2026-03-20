@@ -2,6 +2,12 @@
 
 Alle wichtigen Änderungen werden hier dokumentiert.
 
+## [1.0.2] – 2026-03-20
+
+### Behoben
+
+- Nach erfolgreichem Profil anwenden: kurze Verzögerung, dann Adapter-Refresh, damit der Live-Bereich (z. B. DHCP) mit WMI wieder zur echten Konfiguration passt
+
 ## [1.0.1] – 2026-03-20
 
 ### Verbesserungen
