@@ -2,6 +2,15 @@
 
 Alle wichtigen Änderungen werden hier dokumentiert.
 
+## [1.0.1] – 2026-03-20
+
+### Verbesserungen
+
+- DHCP-Anzeige über WMI (`Win32_NetworkAdapterConfiguration`), mit Fallback
+- Update-Check: wiederverwendbarer `HttpClient`, klarere Struktur
+- Einstellungen im MainViewModel konsistenter; UI: Profilvorschau & Live-Adapter als Tabellen, Karten-Layout, Busy-Indikator
+- Profilliste: lesbarer Adapter-Hinweis (WLAN/LAN) statt roher Interface-ID
+
 ## [1.0.0-alpha.1] – 2026-03-12
 
 ### Erste öffentliche Alpha
