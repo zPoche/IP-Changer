@@ -118,7 +118,7 @@ public sealed class MainViewModel : ViewModelBase
                 ((AsyncRelayCommand)ApplyProfileCommand).NotifyCanExecuteChanged();
                 ((AsyncRelayCommand)ApplyProfileDoubleClickCommand).NotifyCanExecuteChanged();
                 SyncStatusAdapterWithProfile();
-                Raise(nameof(ProfileDetails));
+                RaiseProfilePreviewProperties();
             }
         }
     }
@@ -129,7 +129,7 @@ public sealed class MainViewModel : ViewModelBase
         set
         {
             if (SetProperty(ref _selectedStatusAdapter, value))
-                Raise(nameof(CurrentAdapterStatus));
+                RaiseLiveAdapterProperties();
         }
     }
 
@@ -163,18 +163,68 @@ public sealed class MainViewModel : ViewModelBase
 
     public bool CanApply => CanApplyInternal();
 
-    public string ProfileDetails
+    public bool HasSelectedProfile => SelectedProfile != null;
+
+    public string ProfilePreviewName => SelectedProfile?.Name ?? string.Empty;
+
+    public string ProfilePreviewDescription =>
+        string.IsNullOrWhiteSpace(SelectedProfile?.Description) ? "—" : SelectedProfile!.Description!;
+
+    public string ProfilePreviewAdapter => FormatProfileAdapterLine(SelectedProfile);
+
+    public string ProfilePreviewMode => SelectedProfile == null ? string.Empty : FormatMode(SelectedProfile.Mode);
+
+    public string ProfilePreviewIpv4 => SelectedProfile == null ? string.Empty : (SelectedProfile.Ipv4 ?? "—");
+
+    public string ProfilePreviewSubnet => SelectedProfile == null ? string.Empty : (SelectedProfile.SubnetMask ?? "—");
+
+    public string ProfilePreviewGateway => SelectedProfile == null ? string.Empty : (SelectedProfile.Gateway ?? "—");
+
+    public string ProfilePreviewDns
     {
         get
         {
-            var p = SelectedProfile;
-            if (p == null) return "Kein Profil ausgewählt.";
-            var adapter = _adapters.FindByInterfaceId(p.AdapterInterfaceId);
-            var aName = adapter?.Name ?? p.AdapterInterfaceId;
-            var dns = string.Join(", ", p.DnsServers.Select(d => d.Address));
-            return
-                $"Name: {p.Name}\nBeschreibung: {p.Description ?? "—"}\nAdapter: {aName}\nModus: {FormatMode(p.Mode)}\n" +
-                $"IPv4: {p.Ipv4 ?? "—"}\nMaske: {p.SubnetMask ?? "—"}\nGateway: {p.Gateway ?? "—"}\nDNS: {dns}\nFavorit: {(p.IsFavorite ? "Ja" : "Nein")}";
+            if (SelectedProfile == null) return string.Empty;
+            var dns = string.Join(", ", SelectedProfile.DnsServers.Select(d => d.Address?.Trim())
+                .Where(a => !string.IsNullOrWhiteSpace(a)));
+            return string.IsNullOrEmpty(dns) ? "—" : dns;
+        }
+    }
+
+    public string ProfilePreviewFavorite =>
+        SelectedProfile == null ? string.Empty : (SelectedProfile.IsFavorite ? "Ja" : "Nein");
+
+    public string LiveOperationalStatus => SelectedStatusAdapter?.OperationalStatus ?? "—";
+
+    public string LiveIpv4 => SelectedStatusAdapter?.Ipv4 ?? "—";
+
+    public string LiveSubnetMask => SelectedStatusAdapter?.SubnetMask ?? "—";
+
+    public string LiveGateway => SelectedStatusAdapter?.Gateway ?? "—";
+
+    public string LiveDns
+    {
+        get
+        {
+            var a = SelectedStatusAdapter;
+            if (a == null) return "—";
+            if (string.IsNullOrWhiteSpace(a.DnsServers) || a.DnsServers == "—") return "—";
+            return a.DnsServers;
+        }
+    }
+
+    public string LiveDhcp => SelectedStatusAdapter == null ? "—" : (SelectedStatusAdapter.DhcpEnabled ? "Ja" : "Nein");
+
+    public string LiveNetworkCategory => SelectedStatusAdapter?.NetworkCategory ?? "—";
+
+    public string LiveWifiSsid
+    {
+        get
+        {
+            if (SelectedStatusAdapter == null) return "—";
+            if (!SelectedStatusAdapter.IsWireless) return "—";
+            var s = SelectedStatusAdapter.WifiSsid;
+            return string.IsNullOrWhiteSpace(s) ? "Nicht verbunden" : s;
         }
     }
 
@@ -212,6 +262,7 @@ public sealed class MainViewModel : ViewModelBase
         foreach (var p in doc.Profiles.OrderBy(x => x.Name, StringComparer.OrdinalIgnoreCase))
             Profiles.Add(p);
         ApplyFilter();
+        RefreshProfileAdapterSubtitles();
         ProfilesChanged?.Invoke(this, EventArgs.Empty);
     }
 
@@ -252,7 +303,9 @@ public sealed class MainViewModel : ViewModelBase
 
         SelectedStatusAdapter ??= Adapters.FirstOrDefault(a => a.OperationalStatus == "Up") ?? Adapters.FirstOrDefault();
         ApplyFilter();
-        Raise(nameof(ProfileDetails));
+        RefreshProfileAdapterSubtitles();
+        RaiseProfilePreviewProperties();
+        RaiseLiveAdapterProperties();
     }
 
     private void SyncStatusAdapterWithProfile()
@@ -280,6 +333,7 @@ public sealed class MainViewModel : ViewModelBase
         SaveProfiles();
         ApplyFilter();
         SelectedProfile = created;
+        RefreshProfileAdapterSubtitles();
     }
 
     private void EditProfile()
@@ -302,7 +356,8 @@ public sealed class MainViewModel : ViewModelBase
             SaveProfiles();
             ApplyFilter();
             SelectedProfile = updated;
-            Raise(nameof(ProfileDetails));
+            RefreshProfileAdapterSubtitles();
+            RaiseProfilePreviewProperties();
         }
     }
 
@@ -317,6 +372,7 @@ public sealed class MainViewModel : ViewModelBase
         SaveProfiles();
         ApplyFilter();
         SelectedProfile = copy;
+        RefreshProfileAdapterSubtitles();
     }
 
     private void DeleteProfile()
@@ -343,7 +399,7 @@ public sealed class MainViewModel : ViewModelBase
 
         SelectedProfile.IsFavorite = newVal;
         SaveProfiles();
-        Raise(nameof(ProfileDetails));
+        RaiseProfilePreviewProperties();
         ProfilesChanged?.Invoke(this, EventArgs.Empty);
     }
 
@@ -351,17 +407,16 @@ public sealed class MainViewModel : ViewModelBase
     {
         if (SelectedProfile == null || !_isElevated) return;
 
-        var settings = _settingsService.Load();
         if (!skipConfirm)
         {
             var (apply, dontAsk) = _dialogs.ConfirmApplyProfile(SelectedProfile.Name,
-                settings.SkipDoubleClickApplyConfirmation);
+                Settings.SkipDoubleClickApplyConfirmation);
             if (!apply) return;
             if (dontAsk)
             {
-                settings.SkipDoubleClickApplyConfirmation = true;
-                _settingsService.Save(settings);
-                Settings = settings;
+                Settings.SkipDoubleClickApplyConfirmation = true;
+                _settingsService.Save(Settings);
+                Raise(nameof(Settings));
             }
         }
 
@@ -447,6 +502,7 @@ public sealed class MainViewModel : ViewModelBase
 
             SaveProfiles();
             ApplyFilter();
+            RefreshProfileAdapterSubtitles();
             LastOperation = $"Import: {doc.Profiles.Count} Profil(e).";
         }
         catch (Exception ex)
@@ -459,8 +515,7 @@ public sealed class MainViewModel : ViewModelBase
 
     private void OpenSettings()
     {
-        var s = _settingsService.Load();
-        var vm = new SettingsViewModel(s);
+        var vm = new SettingsViewModel(Settings);
         if (!SettingsWindow.ShowDialog(vm, System.Windows.Application.Current.MainWindow))
             return;
         var updated = vm.ToModel();
@@ -472,8 +527,7 @@ public sealed class MainViewModel : ViewModelBase
 
     private async Task CheckUpdatesAsync(bool fromStartup)
     {
-        var s = _settingsService.Load();
-        var r = await _updates.CheckAsync(s.UpdateCheckUrl);
+        var r = await _updates.CheckAsync(Settings.UpdateCheckUrl);
 
         if (!r.Success)
         {
@@ -513,12 +567,58 @@ public sealed class MainViewModel : ViewModelBase
         }
     }
 
-    private static string FormatMode(IpAddressMode m) => m == IpAddressMode.Dhcp ? "DHCP" : "Statisch";
-
     public void OnStartupUpdateCheck()
     {
-        var s = _settingsService.Load();
-        if (!s.CheckForUpdatesOnStartup) return;
+        if (!Settings.CheckForUpdatesOnStartup) return;
         _ = CheckUpdatesAsync(fromStartup: true);
     }
+
+    private void RaiseProfilePreviewProperties()
+    {
+        Raise(nameof(HasSelectedProfile));
+        Raise(nameof(ProfilePreviewName));
+        Raise(nameof(ProfilePreviewDescription));
+        Raise(nameof(ProfilePreviewAdapter));
+        Raise(nameof(ProfilePreviewMode));
+        Raise(nameof(ProfilePreviewIpv4));
+        Raise(nameof(ProfilePreviewSubnet));
+        Raise(nameof(ProfilePreviewGateway));
+        Raise(nameof(ProfilePreviewDns));
+        Raise(nameof(ProfilePreviewFavorite));
+    }
+
+    private void RaiseLiveAdapterProperties()
+    {
+        Raise(nameof(CurrentAdapterStatus));
+        Raise(nameof(LiveOperationalStatus));
+        Raise(nameof(LiveIpv4));
+        Raise(nameof(LiveSubnetMask));
+        Raise(nameof(LiveGateway));
+        Raise(nameof(LiveDns));
+        Raise(nameof(LiveDhcp));
+        Raise(nameof(LiveNetworkCategory));
+        Raise(nameof(LiveWifiSsid));
+    }
+
+    private void RefreshProfileAdapterSubtitles()
+    {
+        foreach (var p in Profiles)
+        {
+            var a = _adapters.FindByInterfaceId(p.AdapterInterfaceId);
+            p.AdapterListSubtitle = a == null
+                ? "Adapter nicht gefunden"
+                : (a.IsWireless ? "WLAN · " : "LAN · ") + a.DisplayLine;
+        }
+    }
+
+    private string FormatProfileAdapterLine(NetworkProfile? p)
+    {
+        if (p == null) return string.Empty;
+        var a = _adapters.FindByInterfaceId(p.AdapterInterfaceId);
+        if (a == null) return "Adapter nicht gefunden";
+        return (a.IsWireless ? "WLAN · " : "LAN · ") + a.DisplayLine;
+    }
+
+    private static string FormatMode(IpAddressMode m) => m == IpAddressMode.Dhcp ? "DHCP" : "Statisch";
 }
+

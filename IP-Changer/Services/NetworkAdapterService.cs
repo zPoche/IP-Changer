@@ -25,6 +25,7 @@ public sealed class NetworkAdapterService : INetworkAdapterService
         var enabledByConnectionId = LoadWmiAdapterEnabledMap();
         var categoryByAlias = LoadNetworkCategories();
         var wifiSsids = LoadWifiSsidsByInterfaceName();
+        var dhcpByInterfaceId = LoadDhcpEnabledByInterfaceId();
 
         try
         {
@@ -53,8 +54,7 @@ public sealed class NetworkAdapterService : INetworkAdapterService
 
                 if (string.IsNullOrEmpty(dns)) dns = "—";
 
-                var dhcp = props.DhcpServerAddresses.Count > 0
-                           || IsDhcpLikelyEnabled(ni, ipv4Unicast);
+                var dhcp = ResolveDhcpEnabled(ni, props, ipv4Unicast, dhcpByInterfaceId);
 
                 var desc = ni.Description;
                 var wireless = ni.NetworkInterfaceType == NetworkInterfaceType.Wireless80211
@@ -104,12 +104,65 @@ public sealed class NetworkAdapterService : INetworkAdapterService
 
     public string? GetNetshInterfaceName(string interfaceId) => FindByInterfaceId(interfaceId)?.Name;
 
-    private static bool IsDhcpLikelyEnabled(NetworkInterface ni, UnicastIPAddressInformation? uni)
+    /// <summary>
+    /// DHCP-Status: zuerst WMI Win32_NetworkAdapterConfiguration.DHCPEnabled (SettingID ↔ NetworkInterface.Id),
+    /// dann DHCP-Server-Adressen aus IP-Properties, sonst Fallback-Heuristik.
+    /// </summary>
+    private static bool ResolveDhcpEnabled(
+        NetworkInterface ni,
+        IPInterfaceProperties props,
+        UnicastIPAddressInformation? ipv4Unicast,
+        IReadOnlyDictionary<string, bool> wmiDhcpByNormalizedId)
+    {
+        var key = NormalizeNetworkInterfaceId(ni.Id);
+        if (!string.IsNullOrEmpty(key) && wmiDhcpByNormalizedId.TryGetValue(key, out var wmi))
+            return wmi;
+
+        if (props.DhcpServerAddresses.Count > 0)
+            return true;
+
+        return FallbackDhcpHeuristic(ni, ipv4Unicast);
+    }
+
+    /// <summary>WMI SettingID auf normalisierte Interface-GUID abbilden (wie <c>NetworkInterface.Id</c>).</summary>
+    private Dictionary<string, bool> LoadDhcpEnabledByInterfaceId()
+    {
+        var map = new Dictionary<string, bool>(StringComparer.OrdinalIgnoreCase);
+        try
+        {
+            using var searcher = new ManagementObjectSearcher(
+                "SELECT SettingID, DHCPEnabled FROM Win32_NetworkAdapterConfiguration WHERE IPEnabled = TRUE");
+            foreach (ManagementObject mo in searcher.Get())
+            {
+                var settingId = mo["SettingID"]?.ToString();
+                if (string.IsNullOrWhiteSpace(settingId)) continue;
+                var key = NormalizeNetworkInterfaceId(settingId);
+                if (string.IsNullOrEmpty(key)) continue;
+                map[key] = mo["DHCPEnabled"] is bool b && b;
+            }
+        }
+        catch (Exception ex)
+        {
+            _log.Warn("WMI Win32_NetworkAdapterConfiguration (DHCPEnabled): " + ex.Message);
+        }
+
+        return map;
+    }
+
+    private static string NormalizeNetworkInterfaceId(string? id)
+    {
+        if (string.IsNullOrWhiteSpace(id)) return string.Empty;
+        var s = id.Trim();
+        if (s.StartsWith('{') && s.EndsWith('}'))
+            s = s.TrimStart('{').TrimEnd('}');
+        return s;
+    }
+
+    private static bool FallbackDhcpHeuristic(NetworkInterface ni, UnicastIPAddressInformation? uni)
     {
         try
         {
             if (uni == null) return true;
-            // Heuristik: Wenn keine statische Konfiguration erkennbar, oft DHCP
             return ni.OperationalStatus == OperationalStatus.Up;
         }
         catch

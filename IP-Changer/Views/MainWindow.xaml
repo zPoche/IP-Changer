@@ -6,12 +6,33 @@
                  xmlns:models="clr-namespace:ProfileIpSwitcher.Models"
                  xmlns:c="clr-namespace:ProfileIpSwitcher.Converters"
                  Title="ProfileIpSwitcher"
-                 Height="640"
-                 Width="980"
+                 Height="700"
+                 Width="1000"
+                 MinHeight="560"
+                 MinWidth="880"
                  WindowStartupLocation="CenterScreen"
                  GlowBrush="{DynamicResource MahApps.Brushes.Accent}">
     <mah:MetroWindow.Resources>
         <c:InverseBooleanToVisibilityConverter x:Key="InverseBoolToVis" />
+        <c:BooleanToVisibilityConverter x:Key="BoolToVis" />
+        <Style x:Key="DetailLabelStyle" TargetType="TextBlock">
+            <Setter Property="Opacity" Value="0.75" />
+            <Setter Property="Margin" Value="0,0,12,6" />
+            <Setter Property="VerticalAlignment" Value="Top" />
+        </Style>
+        <Style x:Key="DetailValueStyle" TargetType="TextBlock">
+            <Setter Property="TextWrapping" Value="Wrap" />
+            <Setter Property="Margin" Value="0,0,0,6" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+        </Style>
+        <Style x:Key="SectionCard" TargetType="Border">
+            <Setter Property="Background" Value="{DynamicResource MahApps.Brushes.Gray10}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource MahApps.Brushes.Gray7}" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="CornerRadius" Value="4" />
+            <Setter Property="Padding" Value="14,12" />
+            <Setter Property="Margin" Value="0,0,0,14" />
+        </Style>
     </mah:MetroWindow.Resources>
     <DockPanel>
         <Menu DockPanel.Dock="Top">
@@ -42,13 +63,13 @@
             <StatusBarItem Content="{Binding LastOperation}" />
         </StatusBar>
 
-        <Grid Margin="8">
+        <Grid Margin="10,8,10,10">
             <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="280" />
+                <ColumnDefinition Width="300" />
                 <ColumnDefinition Width="*" />
             </Grid.ColumnDefinitions>
 
-            <DockPanel Grid.Column="0" Margin="0,0,8,0">
+            <DockPanel Grid.Column="0" Margin="0,0,12,0">
                 <TextBox DockPanel.Dock="Top"
                          mah:TextBoxHelper.Watermark="Suche…"
                          Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
@@ -71,7 +92,7 @@
                     </b:Interaction.Triggers>
                     <ListBox.ItemTemplate>
                         <DataTemplate DataType="{x:Type models:NetworkProfile}">
-                            <Grid Margin="4">
+                            <Grid Margin="4,2">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="Auto" />
                                     <ColumnDefinition Width="*" />
@@ -80,6 +101,7 @@
                                            Text="★"
                                            FontSize="16"
                                            Margin="0,0,6,0"
+                                           VerticalAlignment="Center"
                                            Foreground="Gold">
                                     <TextBlock.Style>
                                         <Style TargetType="TextBlock">
@@ -95,8 +117,8 @@
                                 <StackPanel Grid.Column="1">
                                     <TextBlock Text="{Binding Name}" FontWeight="SemiBold" />
                                     <TextBlock FontSize="11"
-                                              Opacity="0.7"
-                                              Text="{Binding AdapterInterfaceId}" />
+                                               Opacity="0.72"
+                                               Text="{Binding AdapterListSubtitle}" />
                                 </StackPanel>
                             </Grid>
                         </DataTemplate>
@@ -104,79 +126,160 @@
                 </ListBox>
             </DockPanel>
 
-            <ScrollViewer Grid.Column="1" VerticalScrollBarVisibility="Auto">
+            <ScrollViewer Grid.Column="1"
+                          VerticalScrollBarVisibility="Auto"
+                          HorizontalScrollBarVisibility="Disabled">
                 <StackPanel>
-                    <TextBlock Text="Aktueller Adapter (Live)"
-                               FontSize="18"
-                               FontWeight="Light"
-                               Margin="0,0,0,8" />
-                    <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
-                        <ComboBox Width="360"
-                                  ItemsSource="{Binding Adapters}"
-                                  DisplayMemberPath="DisplayLine"
-                                  SelectedItem="{Binding SelectedStatusAdapter}" />
-                        <Button Content="Aktualisieren"
-                                Margin="8,0,0,0"
-                                Command="{Binding RefreshAdaptersCommand}" />
-                    </StackPanel>
+                    <!-- Live-Adapter -->
+                    <Border Style="{StaticResource SectionCard}">
+                        <StackPanel>
+                            <TextBlock Text="Aktueller Adapter (Live)"
+                                       FontSize="18"
+                                       FontWeight="Light"
+                                       Margin="0,0,0,10" />
+                            <StackPanel Orientation="Horizontal" Margin="0,0,0,12">
+                                <ComboBox Width="380"
+                                          MinWidth="200"
+                                          ItemsSource="{Binding Adapters}"
+                                          DisplayMemberPath="DisplayLine"
+                                          SelectedItem="{Binding SelectedStatusAdapter}" />
+                                <Button Content="Aktualisieren"
+                                        Margin="10,0,0,0"
+                                        VerticalAlignment="Center"
+                                        Padding="12,6"
+                                        Command="{Binding RefreshAdaptersCommand}" />
+                            </StackPanel>
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto" MinWidth="132" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                </Grid.RowDefinitions>
+                                <TextBlock Grid.Row="0" Grid.Column="0" Text="Status" Style="{StaticResource DetailLabelStyle}" />
+                                <TextBlock Grid.Row="0" Grid.Column="1" Text="{Binding LiveOperationalStatus, Mode=OneWay}" Style="{StaticResource DetailValueStyle}" />
+                                <TextBlock Grid.Row="1" Grid.Column="0" Text="IPv4" Style="{StaticResource DetailLabelStyle}" />
+                                <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding LiveIpv4, Mode=OneWay}" Style="{StaticResource DetailValueStyle}" />
+                                <TextBlock Grid.Row="2" Grid.Column="0" Text="Subnetzmaske" Style="{StaticResource DetailLabelStyle}" />
+                                <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding LiveSubnetMask, Mode=OneWay}" Style="{StaticResource DetailValueStyle}" />
+                                <TextBlock Grid.Row="3" Grid.Column="0" Text="Gateway" Style="{StaticResource DetailLabelStyle}" />
+                                <TextBlock Grid.Row="3" Grid.Column="1" Text="{Binding LiveGateway, Mode=OneWay}" Style="{StaticResource DetailValueStyle}" />
+                                <TextBlock Grid.Row="4" Grid.Column="0" Text="DNS" Style="{StaticResource DetailLabelStyle}" />
+                                <TextBlock Grid.Row="4" Grid.Column="1" Text="{Binding LiveDns, Mode=OneWay}" Style="{StaticResource DetailValueStyle}" />
+                                <TextBlock Grid.Row="5" Grid.Column="0" Text="DHCP" Style="{StaticResource DetailLabelStyle}" />
+                                <TextBlock Grid.Row="5" Grid.Column="1" Text="{Binding LiveDhcp, Mode=OneWay}" Style="{StaticResource DetailValueStyle}" />
+                                <TextBlock Grid.Row="6" Grid.Column="0" Text="Netzwerkprofil" Style="{StaticResource DetailLabelStyle}" />
+                                <TextBlock Grid.Row="6" Grid.Column="1" Text="{Binding LiveNetworkCategory, Mode=OneWay}" Style="{StaticResource DetailValueStyle}" />
+                                <TextBlock Grid.Row="7" Grid.Column="0" Text="WLAN-SSID" Style="{StaticResource DetailLabelStyle}" />
+                                <TextBlock Grid.Row="7" Grid.Column="1" Text="{Binding LiveWifiSsid, Mode=OneWay}" Style="{StaticResource DetailValueStyle}" />
+                            </Grid>
+                        </StackPanel>
+                    </Border>
 
-                    <TextBlock TextWrapping="Wrap" Margin="0,0,0,16">
-                        <Run Text="Status: " FontWeight="SemiBold" />
-                        <Run Text="{Binding SelectedStatusAdapter.OperationalStatus, Mode=OneWay}" />
-                        <LineBreak />
-                        <Run Text="IPv4: " FontWeight="SemiBold" />
-                        <Run Text="{Binding SelectedStatusAdapter.Ipv4, Mode=OneWay}" />
-                        <LineBreak />
-                        <Run Text="Maske: " FontWeight="SemiBold" />
-                        <Run Text="{Binding SelectedStatusAdapter.SubnetMask, Mode=OneWay}" />
-                        <LineBreak />
-                        <Run Text="Gateway: " FontWeight="SemiBold" />
-                        <Run Text="{Binding SelectedStatusAdapter.Gateway, Mode=OneWay}" />
-                        <LineBreak />
-                        <Run Text="DNS: " FontWeight="SemiBold" />
-                        <Run Text="{Binding SelectedStatusAdapter.DnsServers, Mode=OneWay}" />
-                        <LineBreak />
-                        <Run Text="DHCP: " FontWeight="SemiBold" />
-                        <Run Text="{Binding SelectedStatusAdapter.DhcpEnabled, Mode=OneWay}" />
-                        <LineBreak />
-                        <Run Text="Netzwerkprofil: " FontWeight="SemiBold" />
-                        <Run Text="{Binding SelectedStatusAdapter.NetworkCategory, Mode=OneWay}" />
-                        <LineBreak />
-                        <Run Text="WLAN-SSID: " FontWeight="SemiBold" />
-                        <Run Text="{Binding SelectedStatusAdapter.WifiSsid, Mode=OneWay}" />
-                    </TextBlock>
+                    <!-- Profil-Vorschau -->
+                    <Border Style="{StaticResource SectionCard}">
+                        <StackPanel>
+                            <TextBlock Text="Profil (Vorschau)"
+                                       FontSize="18"
+                                       FontWeight="Light"
+                                       Margin="0,0,0,10" />
 
-                    <Separator Margin="0,0,0,16" />
+                            <TextBlock Text="Wählen Sie links ein Profil aus oder legen Sie ein neues an."
+                                       TextWrapping="Wrap"
+                                       Opacity="0.65"
+                                       Margin="0,8,0,12"
+                                       Visibility="{Binding HasSelectedProfile, Converter={StaticResource InverseBoolToVis}}" />
 
-                    <TextBlock Text="Profil (Vorschau)"
-                               FontSize="18"
-                               FontWeight="Light"
-                               Margin="0,0,0,8" />
-                    <TextBox Text="{Binding ProfileDetails, Mode=OneWay}"
-                             IsReadOnly="True"
-                             TextWrapping="Wrap"
-                             MinHeight="120"
-                             Margin="0,0,0,8" />
+                            <Grid Visibility="{Binding HasSelectedProfile, Converter={StaticResource BoolToVis}}">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto" MinWidth="132" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                </Grid.RowDefinitions>
+                                <TextBlock Grid.Row="0" Grid.Column="0" Text="Name" Style="{StaticResource DetailLabelStyle}" />
+                                <TextBlock Grid.Row="0" Grid.Column="1" Text="{Binding ProfilePreviewName, Mode=OneWay}" Style="{StaticResource DetailValueStyle}" />
+                                <TextBlock Grid.Row="1" Grid.Column="0" Text="Beschreibung" Style="{StaticResource DetailLabelStyle}" />
+                                <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding ProfilePreviewDescription, Mode=OneWay}" Style="{StaticResource DetailValueStyle}" />
+                                <TextBlock Grid.Row="2" Grid.Column="0" Text="Adapter" Style="{StaticResource DetailLabelStyle}" />
+                                <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding ProfilePreviewAdapter, Mode=OneWay}" Style="{StaticResource DetailValueStyle}" />
+                                <TextBlock Grid.Row="3" Grid.Column="0" Text="Modus" Style="{StaticResource DetailLabelStyle}" />
+                                <TextBlock Grid.Row="3" Grid.Column="1" Text="{Binding ProfilePreviewMode, Mode=OneWay}" Style="{StaticResource DetailValueStyle}" />
+                                <TextBlock Grid.Row="4" Grid.Column="0" Text="IPv4" Style="{StaticResource DetailLabelStyle}" />
+                                <TextBlock Grid.Row="4" Grid.Column="1" Text="{Binding ProfilePreviewIpv4, Mode=OneWay}" Style="{StaticResource DetailValueStyle}" />
+                                <TextBlock Grid.Row="5" Grid.Column="0" Text="Subnetzmaske" Style="{StaticResource DetailLabelStyle}" />
+                                <TextBlock Grid.Row="5" Grid.Column="1" Text="{Binding ProfilePreviewSubnet, Mode=OneWay}" Style="{StaticResource DetailValueStyle}" />
+                                <TextBlock Grid.Row="6" Grid.Column="0" Text="Gateway" Style="{StaticResource DetailLabelStyle}" />
+                                <TextBlock Grid.Row="6" Grid.Column="1" Text="{Binding ProfilePreviewGateway, Mode=OneWay}" Style="{StaticResource DetailValueStyle}" />
+                                <TextBlock Grid.Row="7" Grid.Column="0" Text="DNS" Style="{StaticResource DetailLabelStyle}" />
+                                <TextBlock Grid.Row="7" Grid.Column="1" Text="{Binding ProfilePreviewDns, Mode=OneWay}" Style="{StaticResource DetailValueStyle}" />
+                                <TextBlock Grid.Row="8" Grid.Column="0" Text="Favorit" Style="{StaticResource DetailLabelStyle}" />
+                                <TextBlock Grid.Row="8" Grid.Column="1" Text="{Binding ProfilePreviewFavorite, Mode=OneWay}" Style="{StaticResource DetailValueStyle}" />
+                            </Grid>
 
-                    <Button Content="Profil bearbeiten…"
-                            Command="{Binding EditProfileCommand}"
-                            HorizontalAlignment="Left"
-                            Margin="0,0,0,16" />
+                            <Button Content="Profil bearbeiten…"
+                                    Command="{Binding EditProfileCommand}"
+                                    HorizontalAlignment="Left"
+                                    Margin="0,14,0,0"
+                                    Padding="12,6" />
+                        </StackPanel>
+                    </Border>
 
-                    <TextBlock TextWrapping="Wrap"
-                               Foreground="OrangeRed"
-                               Margin="0,0,0,8"
-                               Visibility="{Binding IsElevated, Converter={StaticResource InverseBoolToVis}}">
-                        Keine Administratorrechte: „Profil anwenden“ ist deaktiviert.
-                    </TextBlock>
-
-                    <Button Content="Profil anwenden"
-                            Command="{Binding ApplyProfileCommand}"
-                            FontSize="16"
-                            Padding="16,10"
-                            HorizontalAlignment="Right"
-                            Style="{DynamicResource MahApps.Styles.Button.MetroAccent}"
-                            IsEnabled="{Binding CanApply}" />
+                    <!-- Anwenden -->
+                    <Border Style="{StaticResource SectionCard}" Margin="0,0,0,0">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <StackPanel Grid.Column="0" VerticalAlignment="Center">
+                                <TextBlock TextWrapping="Wrap"
+                                           Foreground="OrangeRed"
+                                           Margin="0,0,0,8"
+                                           Visibility="{Binding IsElevated, Converter={StaticResource InverseBoolToVis}}">
+                                    Keine Administratorrechte: „Profil anwenden“ ist deaktiviert.
+                                </TextBlock>
+                                <TextBlock Text="Profil auf den gewählten Live-Adapter anwenden (netsh)."
+                                           Opacity="0.7"
+                                           TextWrapping="Wrap" />
+                            </StackPanel>
+                            <StackPanel Grid.Column="1"
+                                        Orientation="Horizontal"
+                                        VerticalAlignment="Center"
+                                        Margin="16,0,0,0">
+                                <mah:ProgressRing Width="36"
+                                                  Height="36"
+                                                  Margin="0,0,14,0"
+                                                  IsActive="{Binding IsBusy}"
+                                                  Visibility="{Binding IsBusy, Converter={StaticResource BoolToVis}}" />
+                                <Button Content="Profil anwenden"
+                                        Command="{Binding ApplyProfileCommand}"
+                                        FontSize="15"
+                                        MinWidth="200"
+                                        Padding="22,12"
+                                        VerticalAlignment="Center"
+                                        Style="{DynamicResource MahApps.Styles.Button.MetroAccent}"
+                                        IsEnabled="{Binding CanApply}" />
+                            </StackPanel>
+                        </Grid>
+                    </Border>
                 </StackPanel>
             </ScrollViewer>
         </Grid>

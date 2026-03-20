@@ -1,5 +1,6 @@
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
+using System.Text.Json.Serialization;
 
 namespace ProfileIpSwitcher.Models;
 
@@ -14,8 +15,17 @@ public class NetworkProfile : INotifyPropertyChanged
     private string? _subnetMask;
     private string? _gateway;
     private bool _isFavorite;
+    private string _adapterListSubtitle = string.Empty;
 
     public Guid Id { get; set; } = Guid.NewGuid();
+
+    /// <summary>Nur UI: lesbare Adapterzeile in der Profilliste (wird nicht persistiert).</summary>
+    [JsonIgnore]
+    public string AdapterListSubtitle
+    {
+        get => _adapterListSubtitle;
+        set => SetField(ref _adapterListSubtitle, value ?? string.Empty);
+    }
 
     public string Name
     {
