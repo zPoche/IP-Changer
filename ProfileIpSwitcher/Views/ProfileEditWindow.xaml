@@ -1,0 +1,112 @@
+<mah:MetroWindow x:Class="ProfileIpSwitcher.Views.ProfileEditWindow"
+                 xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                 xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                 xmlns:mah="http://metro.mahapps.com/winfx/xaml/controls"
+                 Title="Profil bearbeiten"
+                 Height="520"
+                 Width="520"
+                 WindowStartupLocation="CenterOwner"
+                 ResizeMode="NoResize">
+    <Grid Margin="16">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+        <ScrollViewer VerticalScrollBarVisibility="Auto">
+            <StackPanel>
+                <TextBlock Text="Profilname" Margin="0,0,0,4" />
+                <TextBox Text="{Binding Name, UpdateSourceTrigger=PropertyChanged}"
+                         mah:TextBoxHelper.Watermark="z. B. Büro LAN"
+                         Margin="0,0,0,12" />
+
+                <TextBlock Text="Beschreibung (optional)" Margin="0,0,0,4" />
+                <TextBox Text="{Binding Description, UpdateSourceTrigger=PropertyChanged}"
+                         AcceptsReturn="True"
+                         Height="60"
+                         TextWrapping="Wrap"
+                         Margin="0,0,0,12" />
+
+                <TextBlock Text="Netzwerkadapter" Margin="0,0,0,4" />
+                <ComboBox ItemsSource="{Binding Adapters}"
+                          DisplayMemberPath="DisplayLine"
+                          SelectedValuePath="InterfaceId"
+                          SelectedValue="{Binding AdapterInterfaceId, UpdateSourceTrigger=PropertyChanged}"
+                          Margin="0,0,0,12" />
+
+                <TextBlock Text="IP-Modus" Margin="0,0,0,4" />
+                <ComboBox ItemsSource="{Binding ModeOptions}"
+                          DisplayMemberPath="Text"
+                          SelectedValuePath="Value"
+                          SelectedValue="{Binding Mode, UpdateSourceTrigger=PropertyChanged}"
+                          Margin="0,0,0,12" />
+
+                <Button Content="Aktuelle Adapterwerte übernehmen"
+                        Margin="0,0,0,12"
+                        Click="LoadFromAdapter_Click" />
+
+                <TextBlock Text="IPv4-Adresse" Margin="0,0,0,4" />
+                <TextBox Text="{Binding Ipv4, UpdateSourceTrigger=PropertyChanged}"
+                         Margin="0,0,0,4">
+                    <TextBox.Style>
+                        <Style TargetType="TextBox" BasedOn="{StaticResource {x:Type TextBox}}">
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding IpInvalid}" Value="True">
+                                    <Setter Property="BorderBrush" Value="Tomato" />
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </TextBox.Style>
+                </TextBox>
+
+                <TextBlock Text="Subnetzmaske" Margin="0,8,0,4" />
+                <TextBox Text="{Binding SubnetMask, UpdateSourceTrigger=PropertyChanged}"
+                         Margin="0,0,0,4">
+                    <TextBox.Style>
+                        <Style TargetType="TextBox" BasedOn="{StaticResource {x:Type TextBox}}">
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding MaskInvalid}" Value="True">
+                                    <Setter Property="BorderBrush" Value="Tomato" />
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </TextBox.Style>
+                </TextBox>
+
+                <TextBlock Text="Gateway (optional)" Margin="0,8,0,4" />
+                <TextBox Text="{Binding Gateway, UpdateSourceTrigger=PropertyChanged}"
+                         Margin="0,0,0,4">
+                    <TextBox.Style>
+                        <Style TargetType="TextBox" BasedOn="{StaticResource {x:Type TextBox}}">
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding GatewayInvalid}" Value="True">
+                                    <Setter Property="BorderBrush" Value="Tomato" />
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </TextBox.Style>
+                </TextBox>
+
+                <TextBlock Text="DNS-Server (eine Zeile pro Adresse oder kommagetrennt)" Margin="0,8,0,4" />
+                <TextBox Text="{Binding DnsText, UpdateSourceTrigger=PropertyChanged}"
+                         AcceptsReturn="True"
+                         Height="72"
+                         TextWrapping="Wrap" />
+            </StackPanel>
+        </ScrollViewer>
+
+        <StackPanel Grid.Row="1"
+                    Orientation="Horizontal"
+                    HorizontalAlignment="Right"
+                    Margin="0,16,0,0">
+            <Button Content="Abbrechen"
+                    Width="100"
+                    Margin="0,0,8,0"
+                    IsCancel="True"
+                    Click="Cancel_Click" />
+            <Button Content="OK"
+                    Width="100"
+                    IsDefault="True"
+                    Click="Ok_Click" />
+        </StackPanel>
+    </Grid>
+</mah:MetroWindow>

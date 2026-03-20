@@ -1,0 +1,34 @@
+# Build
+[Bb]in/
+[Oo]bj/
+[Dd]ebug/
+[Rr]elease/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+.vs/
+
+# NuGet
+*.nupkg
+**/packages/*
+!**/packages/build/
+
+# Rider / VS Code
+.idea/
+.vscode/*
+!.vscode/extensions.json
+
+# OS
+Thumbs.db
+Desktop.ini
+.DS_Store
+
+# Test / coverage
+TestResults/
+*.trx
+coverage*.json
+coverage*.xml
+
+# Logs (lokal / AppData werden ohnehin nicht committed)
+*.log

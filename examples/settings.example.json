@@ -1,0 +1,8 @@
+{
+  "startWithWindows": false,
+  "minimizeToTrayInsteadOfClose": false,
+  "checkForUpdatesOnStartup": false,
+  "skipDoubleClickApplyConfirmation": false,
+  "updateCheckUrl": "https://github.com/example/ProfileIpSwitcher/releases/latest",
+  "gitHubReleasesUrl": "https://github.com/example/ProfileIpSwitcher/releases"
+}
