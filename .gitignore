@@ -1,6 +1,7 @@
 # Publish-Ordner (Release-ZIP lokal)
 publish/
 publish-out/
+publish-ci-test/
 
 # Build
 [Bb]in/

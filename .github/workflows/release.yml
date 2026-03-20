@@ -22,21 +22,32 @@ jobs:
           dotnet-version: "8.0.x"
 
       - name: Publish (Single-File, self-contained win-x64)
+        shell: pwsh
         run: dotnet publish IP-Changer/IP-Changer.csproj -c Release -r win-x64 -o "${{ github.workspace }}/publish-out"
 
       - name: ZIP (nur EXE)
-        id: pack
         shell: pwsh
         run: |
+          $root = "${{ github.workspace }}"
+          $exe = Join-Path $root "publish-out/ProfileIpSwitcher.exe"
+          if (-not (Test-Path -LiteralPath $exe)) {
+            Write-Error "Erwartete EXE fehlt: $exe"
+            Get-ChildItem -LiteralPath (Join-Path $root "publish-out") -ErrorAction SilentlyContinue | Format-Table -AutoSize
+            exit 1
+          }
           $tag = "${{ github.ref_name }}"
-          $zip = "ProfileIpSwitcher-$tag-win-x64-self-contained.zip"
-          Compress-Archive -LiteralPath "publish-out/ProfileIpSwitcher.exe" -DestinationPath $zip -Force
-          Add-Content -Path $env:GITHUB_OUTPUT -Value "asset=$zip"
+          $zipName = "ProfileIpSwitcher-$tag-win-x64-self-contained.zip"
+          $zipPath = Join-Path $root $zipName
+          Compress-Archive -LiteralPath $exe -DestinationPath $zipPath -Force
+          if (-not (Test-Path -LiteralPath $zipPath)) { Write-Error "ZIP wurde nicht erzeugt: $zipPath"; exit 1 }
+          Write-Host "Asset: $zipPath ($(Get-Item $zipPath).Length bytes)"
 
       - name: Release erstellen / Assets anhängen
         uses: softprops/action-gh-release@v2
         with:
-          files: ${{ steps.pack.outputs.asset }}
+          # Absoluter Pfad: vermeidet leere/falsche files:-Auflösung (sonst nur GitHub-„Source code“-ZIPs sichtbar)
+          files: ${{ github.workspace }}/ProfileIpSwitcher-${{ github.ref_name }}-win-x64-self-contained.zip
           generate_release_notes: true
+          fail_on_unmatched_files: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

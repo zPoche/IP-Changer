@@ -42,6 +42,8 @@ Ergebnis: `publish\ProfileIpSwitcher.exe` (eine große, portable EXE inkl. .NET-
 
 **Manuell:** Du kannst weiterhin unter **Releases** von Hand Dateien anhängen; der Workflow macht es bei jedem neuen `v*`-Tag automatisch.
 
+**Nur „Source code (zip)“ / „Source code (tar.gz)“?** Das legt GitHub bei jedem Release automatisch an – dein Build-ZIP ist eine **zusätzliche** Datei. Fehlt sie, ist der **Release**-Workflow fehlgeschlagen oder nicht gelaufen: unter **Actions** den Lauf **Release** zum Tag prüfen; Workflow-Rechte (siehe oben); nach Fix **neuen** `v*`-Tag pushen (oder Tag löschen und erneut setzen, falls du den gleichen Namen brauchst).
+
 Die App vergleicht die installierte Assembly-Version mit dem **neuesten Release-Tag** auf GitHub.
 
 ## Daten
