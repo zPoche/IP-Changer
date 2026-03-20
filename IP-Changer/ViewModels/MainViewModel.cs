@@ -248,10 +248,10 @@ public sealed class MainViewModel : ViewModelBase
     public IReadOnlyList<NetworkProfile> GetFavoriteProfiles() =>
         Profiles.Where(p => p.IsFavorite).ToList();
 
-    public async Task ApplyProfileFromTrayAsync(NetworkProfile profile)
+    public async Task<bool> ApplyProfileFromTrayAsync(NetworkProfile profile)
     {
         SelectedProfile = profile;
-        await ApplySelectedAsync(skipConfirm: true);
+        return await ApplySelectedAsync(skipConfirm: true);
     }
 
     private bool CanApplyInternal() =>
@@ -405,15 +405,15 @@ public sealed class MainViewModel : ViewModelBase
         ProfilesChanged?.Invoke(this, EventArgs.Empty);
     }
 
-    private async Task ApplySelectedAsync(bool skipConfirm)
+    private async Task<bool> ApplySelectedAsync(bool skipConfirm)
     {
-        if (SelectedProfile == null || !_isElevated) return;
+        if (SelectedProfile == null || !_isElevated) return false;
 
         if (!skipConfirm)
         {
             var (apply, dontAsk) = _dialogs.ConfirmApplyProfile(SelectedProfile.Name,
                 Settings.SkipDoubleClickApplyConfirmation);
-            if (!apply) return;
+            if (!apply) return false;
             if (dontAsk)
             {
                 Settings.SkipDoubleClickApplyConfirmation = true;
@@ -428,7 +428,7 @@ public sealed class MainViewModel : ViewModelBase
             System.Windows.MessageBox.Show("Adapter für dieses Profil wurde nicht gefunden. Bitte Adapter aktualisieren oder Profil bearbeiten.",
                 "Fehler", MessageBoxButton.OK, MessageBoxImage.Warning);
             LastOperation = "Fehler: Adapter nicht gefunden.";
-            return;
+            return false;
         }
 
         IsBusy = true;
@@ -442,6 +442,7 @@ public sealed class MainViewModel : ViewModelBase
                 System.Windows.MessageBox.Show(result.Message, "Erfolg", MessageBoxButton.OK, MessageBoxImage.Information);
                 await Task.Delay(1300, CancellationToken.None);
                 RefreshAdapters();
+                return true;
             }
             else
             {
@@ -449,6 +450,7 @@ public sealed class MainViewModel : ViewModelBase
                 _log.Error("netsh: " + result.Message + " " + result.StandardError);
                 System.Windows.MessageBox.Show(result.Message + Environment.NewLine + result.StandardError, "Fehler",
                     MessageBoxButton.OK, MessageBoxImage.Error);
+                return false;
             }
         }
         finally

@@ -76,8 +76,9 @@ public partial class MainWindow
             {
                 try
                 {
-                    await _viewModel!.ApplyProfileFromTrayAsync(profile);
-                    _notifyIcon!.ShowBalloonTip(4000, "IP-Changer", "Profil angewendet.", ToolTipIcon.Info);
+                    var applied = await _viewModel!.ApplyProfileFromTrayAsync(profile);
+                    if (applied)
+                        _notifyIcon!.ShowBalloonTip(4000, "IP-Changer", "Profil angewendet.", ToolTipIcon.Info);
                 }
                 catch (Exception ex)
                 {
