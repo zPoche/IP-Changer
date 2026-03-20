@@ -1,3 +1,7 @@
+# Publish-Ordner (Release-ZIP lokal)
+publish/
+publish-out/
+
 # Build
 [Bb]in/
 [Oo]bj/

@@ -1,0 +1,17 @@
+# Changelog
+
+Alle wichtigen Änderungen werden hier dokumentiert.
+
+## [1.0.0-alpha.1] – 2026-03-12
+
+### Erste öffentliche Alpha
+
+- WPF-App (.NET 8) mit MahApps.Metro: IP-/DNS-Profile pro Netzwerkadapter
+- Profilverwaltung (anlegen, bearbeiten, duplizieren, Favorit, Suche)
+- Anwenden per `netsh` (Admin-Rechte erforderlich)
+- Adapter-Erkennung inkl. WLAN-SSID und Netzwerkprofil (WMI)
+- Import/Export der Profile (JSON)
+- Infobereich, Einstellungen, Update-Check (GitHub Releases)
+- Logs unter `%AppData%\ProfileIpSwitcher\logs\`
+
+**Hinweis:** Alpha – vor Produktiveinsatz bitte testen. Feedback willkommen.
