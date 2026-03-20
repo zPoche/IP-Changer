@@ -39,31 +39,3 @@ Siehe `examples\settings.example.json`.
 
 `UpdateCheckService` ist ein **Stub** mit TODO für einen echten HTTP-Endpunkt (z. B. GitHub Releases API oder `version.json`).
 
-## Auf GitHub veröffentlichen
-
-1. **Git-Nutzer setzen** (einmalig, oder nur in diesem Repo ohne `--global`):
-
-   ```powershell
-   git config --global user.name "Dein Name"
-   git config --global user.email "deine@email.de"
-   ```
-
-2. **Ersten Commit** (im Ordner `ProfileIpSwitcher`, Dateien sind schon per `git add` vorgemerkt):
-
-   ```powershell
-   cd "c:\Users\Poche\Documents\# Coding\Erstes Projekt\ProfileIpSwitcher"
-   git commit -m "Initial commit: ProfileIpSwitcher"
-   ```
-
-3. **Neues Repository auf GitHub**  
-   Auf [github.com/new](https://github.com/new) ein leeres Repo anlegen (ohne README/License, damit es keine Konflikte gibt).
-
-4. **Remote hinzufügen und pushen** (`DEINUSER` und `ProfileIpSwitcher` anpassen):
-
-   ```powershell
-   git branch -M main
-   git remote add origin https://github.com/DEINUSER/ProfileIpSwitcher.git
-   git push -u origin main
-   ```
-
-   Bei HTTPS fragt Git nach Anmeldung (Personal Access Token statt Passwort) oder du nutzt **GitHub Desktop** / **SSH**.
