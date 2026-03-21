@@ -61,7 +61,7 @@
                 Margin="0,12,0,0"
                 Padding="18,8"
                 MinWidth="100"
-                Style="{DynamicResource MahApps.Styles.Button.MetroAccent}"
+                Style="{DynamicResource App.Button.Accent}"
                 Click="Close_Click"
                 IsDefault="True"
                 IsCancel="True" />

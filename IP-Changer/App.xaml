@@ -10,6 +10,23 @@
                 <ResourceDictionary Source="pack://application:,,,/MahApps.Metro;component/Styles/Themes/Dark.Cobalt.xaml" />
             </ResourceDictionary.MergedDictionaries>
 
+            <!-- Lesbare Buttons: kein Auto-GROSSBUCHSTABEN, hoher Kontrast auf Dark-Theme -->
+            <CharacterCasing x:Key="MahApps.CharacterCasing.Button">Normal</CharacterCasing>
+            <CharacterCasing x:Key="MahApps.CharacterCasing.Button.Square">Normal</CharacterCasing>
+            <CharacterCasing x:Key="MahApps.CharacterCasing.Button.Dialogs">Normal</CharacterCasing>
+
+            <Style TargetType="Button" BasedOn="{StaticResource MahApps.Styles.Button}">
+                <Setter Property="Foreground" Value="#FFF5F5F5" />
+                <Setter Property="FontWeight" Value="SemiBold" />
+                <Setter Property="Background" Value="{DynamicResource MahApps.Brushes.Gray8}" />
+                <Setter Property="BorderBrush" Value="{DynamicResource MahApps.Brushes.Gray6}" />
+            </Style>
+
+            <Style x:Key="App.Button.Accent" TargetType="Button" BasedOn="{StaticResource MahApps.Styles.Button.MetroAccent}">
+                <Setter Property="Foreground" Value="#FFFFFFFF" />
+                <Setter Property="FontWeight" Value="SemiBold" />
+            </Style>
+
             <!-- Gemeinsame UI-Bausteine (Karten, Überschriften) -->
             <Style x:Key="App.SectionCard" TargetType="Border">
                 <Setter Property="Background" Value="{DynamicResource MahApps.Brushes.Gray10}" />

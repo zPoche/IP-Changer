@@ -316,7 +316,7 @@
                                         MinWidth="200"
                                         Padding="22,12"
                                         VerticalAlignment="Center"
-                                        Style="{DynamicResource MahApps.Styles.Button.MetroAccent}"
+                                        Style="{DynamicResource App.Button.Accent}"
                                         IsEnabled="{Binding CanApply}" />
                             </StackPanel>
                         </Grid>

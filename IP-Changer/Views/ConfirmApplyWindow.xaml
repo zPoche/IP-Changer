@@ -38,7 +38,7 @@
             <Button Content="Anwenden"
                     MinWidth="100"
                     Padding="14,8"
-                    Style="{DynamicResource MahApps.Styles.Button.MetroAccent}"
+                    Style="{DynamicResource App.Button.Accent}"
                     IsDefault="True"
                     Click="Ok_Click" />
         </StackPanel>
