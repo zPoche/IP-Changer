@@ -24,4 +24,17 @@ public sealed class DialogService : IDialogService
         var result = dlg.ShowDialog();
         return (result == true, dlg.DoNotAskAgain);
     }
+
+    public void ShowInformation(string message, string title = "Hinweis") =>
+        System.Windows.MessageBox.Show(_owner, message, title, MessageBoxButton.OK, MessageBoxImage.Information);
+
+    public void ShowWarning(string message, string title = "Hinweis") =>
+        System.Windows.MessageBox.Show(_owner, message, title, MessageBoxButton.OK, MessageBoxImage.Warning);
+
+    public void ShowError(string message, string title = "Fehler") =>
+        System.Windows.MessageBox.Show(_owner, message, title, MessageBoxButton.OK, MessageBoxImage.Error);
+
+    public bool AskYesNo(string message, string title) =>
+        System.Windows.MessageBox.Show(_owner, message, title, MessageBoxButton.YesNo, MessageBoxImage.Question) ==
+        MessageBoxResult.Yes;
 }

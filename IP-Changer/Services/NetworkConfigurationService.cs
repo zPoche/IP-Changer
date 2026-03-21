@@ -144,9 +144,9 @@ public sealed class NetworkConfigurationService : INetworkConfigurationService
         p.Start();
         var readOut = p.StandardOutput.ReadToEndAsync(cancellationToken);
         var readErr = p.StandardError.ReadToEndAsync(cancellationToken);
-        await p.WaitForExitAsync(cancellationToken);
-        var o = await readOut;
-        var e = await readErr;
+        await Task.WhenAll(p.WaitForExitAsync(cancellationToken), readOut, readErr).ConfigureAwait(false);
+        var o = await readOut.ConfigureAwait(false);
+        var e = await readErr.ConfigureAwait(false);
         _log.Info($"netsh {args} => Exit {p.ExitCode}");
         return (p.ExitCode, o, e);
     }

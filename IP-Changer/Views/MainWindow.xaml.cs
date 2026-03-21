@@ -94,7 +94,9 @@ public partial class MainWindow
             System.Windows.Application.Current.Shutdown();
         });
 
+        var previous = _notifyIcon.ContextMenuStrip;
         _notifyIcon.ContextMenuStrip = menu;
+        previous?.Dispose();
     }
 
     private void ShowFromTray()

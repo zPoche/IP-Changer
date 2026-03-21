@@ -1,7 +1,6 @@
 using System.Collections.ObjectModel;
 using System.IO;
 using System.Text.Json;
-using System.Windows;
 using System.Windows.Input;
 using System.Windows.Threading;
 using ProfileIpSwitcher.Helpers;
@@ -66,12 +65,10 @@ public sealed class MainViewModel : ViewModelBase
         if (!_isElevated)
         {
             _lastOperation = "Keine Administratorrechte – Anwenden deaktiviert.";
-            System.Windows.MessageBox.Show(
+            _dialogs.ShowWarning(
                 "ProfileIpSwitcher sollte als Administrator gestartet werden, um IP-Einstellungen zu ändern.\n" +
                 "Die Schaltfläche „Profil anwenden“ ist deaktiviert.",
-                "Hinweis",
-                MessageBoxButton.OK,
-                MessageBoxImage.Warning);
+                "Hinweis");
         }
 
         RefreshAdapters();
@@ -326,7 +323,7 @@ public sealed class MainViewModel : ViewModelBase
             return;
         if (!vm.TryBuildProfile(out var created, out var err))
         {
-            System.Windows.MessageBox.Show(err, "Profil", MessageBoxButton.OK, MessageBoxImage.Warning);
+            _dialogs.ShowWarning(err, "Profil");
             return;
         }
 
@@ -346,7 +343,7 @@ public sealed class MainViewModel : ViewModelBase
             return;
         if (!vm.TryBuildProfile(out var updated, out var err))
         {
-            System.Windows.MessageBox.Show(err, "Profil", MessageBoxButton.OK, MessageBoxImage.Warning);
+            _dialogs.ShowWarning(err, "Profil");
             return;
         }
 
@@ -380,8 +377,7 @@ public sealed class MainViewModel : ViewModelBase
     private void DeleteProfile()
     {
         if (SelectedProfile == null) return;
-        if (System.Windows.MessageBox.Show($"Profil „{SelectedProfile.Name}“ löschen?", "Löschen", MessageBoxButton.YesNo,
-                MessageBoxImage.Question) != MessageBoxResult.Yes)
+        if (!_dialogs.AskYesNo($"Profil „{SelectedProfile.Name}“ löschen?", "Löschen"))
             return;
         Profiles.Remove(SelectedProfile);
         SaveProfiles();
@@ -409,53 +405,62 @@ public sealed class MainViewModel : ViewModelBase
     {
         if (SelectedProfile == null || !_isElevated) return false;
 
-        if (!skipConfirm)
-        {
-            var (apply, dontAsk) = _dialogs.ConfirmApplyProfile(SelectedProfile.Name,
-                Settings.SkipDoubleClickApplyConfirmation);
-            if (!apply) return false;
-            if (dontAsk)
-            {
-                Settings.SkipDoubleClickApplyConfirmation = true;
-                _settingsService.Save(Settings);
-                Raise(nameof(Settings));
-            }
-        }
-
-        var netshName = _adapters.GetNetshInterfaceName(SelectedProfile.AdapterInterfaceId);
-        if (string.IsNullOrEmpty(netshName))
-        {
-            System.Windows.MessageBox.Show("Adapter für dieses Profil wurde nicht gefunden. Bitte Adapter aktualisieren oder Profil bearbeiten.",
-                "Fehler", MessageBoxButton.OK, MessageBoxImage.Warning);
-            LastOperation = "Fehler: Adapter nicht gefunden.";
-            return false;
-        }
-
-        IsBusy = true;
         try
         {
-            var result = await _netCfg.ApplyProfileAsync(SelectedProfile, netshName);
-            if (result.Success)
+            if (!skipConfirm)
             {
-                LastOperation = "OK: " + result.Message;
-                _log.Info($"Profil angewendet: {SelectedProfile.Name}");
-                System.Windows.MessageBox.Show(result.Message, "Erfolg", MessageBoxButton.OK, MessageBoxImage.Information);
-                await Task.Delay(1300, CancellationToken.None);
-                RefreshAdapters();
-                return true;
+                var (apply, dontAsk) = _dialogs.ConfirmApplyProfile(SelectedProfile.Name,
+                    Settings.SkipDoubleClickApplyConfirmation);
+                if (!apply) return false;
+                if (dontAsk)
+                {
+                    Settings.SkipDoubleClickApplyConfirmation = true;
+                    _settingsService.Save(Settings);
+                    Raise(nameof(Settings));
+                }
             }
-            else
+
+            var netshName = _adapters.GetNetshInterfaceName(SelectedProfile.AdapterInterfaceId);
+            if (string.IsNullOrEmpty(netshName))
             {
-                LastOperation = "Fehler: " + result.Message;
-                _log.Error("netsh: " + result.Message + " " + result.StandardError);
-                System.Windows.MessageBox.Show(result.Message + Environment.NewLine + result.StandardError, "Fehler",
-                    MessageBoxButton.OK, MessageBoxImage.Error);
+                _dialogs.ShowWarning(
+                    "Adapter für dieses Profil wurde nicht gefunden. Bitte Adapter aktualisieren oder Profil bearbeiten.",
+                    "Fehler");
+                LastOperation = "Fehler: Adapter nicht gefunden.";
                 return false;
             }
+
+            IsBusy = true;
+            try
+            {
+                var result = await _netCfg.ApplyProfileAsync(SelectedProfile, netshName);
+                if (result.Success)
+                {
+                    LastOperation = "OK: " + result.Message;
+                    _log.Info($"Profil angewendet: {SelectedProfile.Name}");
+                    _dialogs.ShowInformation(result.Message, "Erfolg");
+                    await Task.Delay(1300, CancellationToken.None);
+                    RefreshAdapters();
+                    return true;
+                }
+
+                LastOperation = "Fehler: " + result.Message;
+                _log.Error("netsh: " + result.Message + " " + result.StandardError);
+                _dialogs.ShowError(result.Message + Environment.NewLine + result.StandardError, "Fehler");
+                return false;
+            }
+            finally
+            {
+                IsBusy = false;
+            }
         }
-        finally
+        catch (Exception ex)
         {
             IsBusy = false;
+            _log.Error("Profil anwenden", ex);
+            LastOperation = "Unerwarteter Fehler beim Anwenden.";
+            _dialogs.ShowError("Profil konnte nicht angewendet werden:\n" + ex.Message, "Fehler");
+            return false;
         }
     }
 
@@ -477,8 +482,7 @@ public sealed class MainViewModel : ViewModelBase
         catch (Exception ex)
         {
             _log.Error("Export", ex);
-            System.Windows.MessageBox.Show("Export fehlgeschlagen: " + ex.Message, "Fehler", MessageBoxButton.OK,
-                MessageBoxImage.Error);
+            _dialogs.ShowError("Export fehlgeschlagen: " + ex.Message, "Fehler");
         }
     }
 
@@ -492,8 +496,7 @@ public sealed class MainViewModel : ViewModelBase
             var doc = JsonSerializer.Deserialize<ProfilesDocument>(json, ProfilePersistenceService.CreateJsonOptions());
             if (doc?.Profiles == null || doc.Profiles.Count == 0)
             {
-                System.Windows.MessageBox.Show("Keine gültigen Profile in der Datei.", "Import", MessageBoxButton.OK,
-                    MessageBoxImage.Warning);
+                _dialogs.ShowWarning("Keine gültigen Profile in der Datei.", "Import");
                 return;
             }
 
@@ -513,8 +516,7 @@ public sealed class MainViewModel : ViewModelBase
         catch (Exception ex)
         {
             _log.Error("Import", ex);
-            System.Windows.MessageBox.Show("Import fehlgeschlagen: " + ex.Message, "Fehler", MessageBoxButton.OK,
-                MessageBoxImage.Error);
+            _dialogs.ShowError("Import fehlgeschlagen: " + ex.Message, "Fehler");
         }
     }
 
@@ -543,10 +545,7 @@ public sealed class MainViewModel : ViewModelBase
         if (!r.Success)
         {
             if (!fromStartup)
-            {
-                System.Windows.MessageBox.Show(r.Message, "Update-Prüfung", MessageBoxButton.OK,
-                    MessageBoxImage.Warning);
-            }
+                _dialogs.ShowWarning(r.Message, "Update-Prüfung");
             else
                 _log.Warn("Update (Start): " + r.Message);
 
@@ -557,12 +556,7 @@ public sealed class MainViewModel : ViewModelBase
         if (r.UpdateAvailable)
         {
             LastOperation = $"Update verfügbar: {r.LatestVersion}";
-            var open = System.Windows.MessageBox.Show(
-                $"{r.Message}\n\nRelease-Seite im Browser öffnen?",
-                "Update verfügbar",
-                MessageBoxButton.YesNo,
-                MessageBoxImage.Information);
-            if (open == MessageBoxResult.Yes)
+            if (_dialogs.AskYesNo($"{r.Message}\n\nRelease-Seite im Browser öffnen?", "Update verfügbar"))
                 UpdateCheckService.OpenReleasesPage(r.ReleasesPageUrl);
             return;
         }
@@ -570,11 +564,7 @@ public sealed class MainViewModel : ViewModelBase
         LastOperation = "Kein Update verfügbar.";
         if (!fromStartup)
         {
-            System.Windows.MessageBox.Show(
-                $"{r.Message}\n\nInstalliert: {r.CurrentVersion}",
-                "Update-Prüfung",
-                MessageBoxButton.OK,
-                MessageBoxImage.Information);
+            _dialogs.ShowInformation($"{r.Message}\n\nInstalliert: {r.CurrentVersion}", "Update-Prüfung");
         }
     }
 

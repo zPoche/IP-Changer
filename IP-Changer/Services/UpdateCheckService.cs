@@ -41,11 +41,12 @@ public sealed class UpdateCheckService : IUpdateCheckService
 
         var settings = _settings.Load();
         var url = (configuredUrl ?? string.Empty).Trim();
+        var releasesFromSettings = settings.GitHubReleasesUrl?.Trim() ?? string.Empty;
         if (string.IsNullOrEmpty(url))
-            url = settings.GitHubReleasesUrl.Trim();
+            url = releasesFromSettings;
 
-        var releasesFallback = !string.IsNullOrWhiteSpace(settings.GitHubReleasesUrl)
-            ? settings.GitHubReleasesUrl.Trim()
+        var releasesFallback = !string.IsNullOrWhiteSpace(releasesFromSettings)
+            ? releasesFromSettings
             : DeriveReleasesPageFromRepoUrl(url);
 
         try

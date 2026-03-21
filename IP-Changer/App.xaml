@@ -7,8 +7,23 @@
             <ResourceDictionary.MergedDictionaries>
                 <ResourceDictionary Source="pack://application:,,,/MahApps.Metro;component/Styles/Controls.xaml" />
                 <ResourceDictionary Source="pack://application:,,,/MahApps.Metro;component/Styles/Fonts.xaml" />
-                <ResourceDictionary Source="pack://application:,,,/MahApps.Metro;component/Styles/Themes/Dark.Blue.xaml" />
+                <ResourceDictionary Source="pack://application:,,,/MahApps.Metro;component/Styles/Themes/Dark.Cobalt.xaml" />
             </ResourceDictionary.MergedDictionaries>
+
+            <!-- Gemeinsame UI-Bausteine (Karten, Überschriften) -->
+            <Style x:Key="App.SectionCard" TargetType="Border">
+                <Setter Property="Background" Value="{DynamicResource MahApps.Brushes.Gray10}" />
+                <Setter Property="BorderBrush" Value="{DynamicResource MahApps.Brushes.Gray7}" />
+                <Setter Property="BorderThickness" Value="1" />
+                <Setter Property="CornerRadius" Value="10" />
+                <Setter Property="Padding" Value="18,14" />
+                <Setter Property="Margin" Value="0,0,0,16" />
+                <Setter Property="SnapsToDevicePixels" Value="True" />
+            </Style>
+            <Style x:Key="App.SectionTitleRow" TargetType="StackPanel">
+                <Setter Property="Orientation" Value="Horizontal" />
+                <Setter Property="Margin" Value="0,0,0,12" />
+            </Style>
         </ResourceDictionary>
     </Application.Resources>
 </Application>
