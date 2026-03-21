@@ -47,7 +47,9 @@ jobs:
         with:
           # Absoluter Pfad: vermeidet leere/falsche files:-Auflösung (sonst nur GitHub-„Source code“-ZIPs sichtbar)
           files: ${{ github.workspace }}/ProfileIpSwitcher-${{ github.ref_name }}-win-x64-self-contained.zip
-          generate_release_notes: true
+          # Detaillierte Beschreibung: vor dem Tag `ReleaseNotes/vX.Y.Z.md` anlegen (Tag z. B. v1.0.6)
+          body_path: ReleaseNotes/${{ github.ref_name }}.md
+          generate_release_notes: false
           fail_on_unmatched_files: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
