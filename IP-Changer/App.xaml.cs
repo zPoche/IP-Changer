@@ -30,6 +30,14 @@ public partial class App : System.Windows.Application
 {
     private readonly ILoggingService _startupLog = new LoggingService();
     private bool _showingFatalError;
+    private bool _exceptionHandlersRegistered;
+
+    public App()
+    {
+        // Defensive: stellt sicher, dass App.xaml-Ressourcen (Styles/ResourceDictionaries)
+        // immer geladen sind, bevor ein Window per Code erstellt wird.
+        InitializeComponent();
+    }
 
     protected override void OnStartup(StartupEventArgs e)
     {
@@ -55,16 +63,19 @@ public partial class App : System.Windows.Application
         catch (Exception ex)
         {
             _startupLog.Error("App.OnStartup: Schwerer Startfehler.", ex);
+            var rootMessage = GetInnermostMessage(ex);
             ShowFatalError(
                 "Die Anwendung konnte nicht korrekt gestartet werden.\n" +
                 "Details stehen in der Logdatei unter %AppData%\\ProfileIpSwitcher\\logs\\app.log.\n\n" +
-                ex.Message);
+                rootMessage);
             Shutdown(-1);
         }
     }
 
     private void RegisterGlobalExceptionHandlers()
     {
+        if (_exceptionHandlersRegistered) return;
+        _exceptionHandlersRegistered = true;
         DispatcherUnhandledException += OnDispatcherUnhandledException;
         AppDomain.CurrentDomain.UnhandledException += OnCurrentDomainUnhandledException;
         TaskScheduler.UnobservedTaskException += OnUnobservedTaskException;
@@ -73,7 +84,7 @@ public partial class App : System.Windows.Application
     private void OnDispatcherUnhandledException(object sender, DispatcherUnhandledExceptionEventArgs e)
     {
         _startupLog.Error("DispatcherUnhandledException", e.Exception);
-        ShowFatalError("Unerwarteter Fehler in der UI.\n\n" + e.Exception.Message);
+        ShowFatalError("Unerwarteter Fehler in der UI.\n\n" + GetInnermostMessage(e.Exception));
         e.Handled = true;
     }
 
@@ -81,7 +92,7 @@ public partial class App : System.Windows.Application
     {
         var ex = e.ExceptionObject as Exception;
         _startupLog.Error("AppDomain.UnhandledException", ex ?? new Exception("Nicht-Exception-Fehlerobjekt."));
-        ShowFatalError("Unerwarteter Fehler (AppDomain).\n\n" + (ex?.Message ?? "Unbekannter Fehler"));
+        ShowFatalError("Unerwarteter Fehler (AppDomain).\n\n" + (ex == null ? "Unbekannter Fehler" : GetInnermostMessage(ex)));
     }
 
     private void OnUnobservedTaskException(object? sender, UnobservedTaskExceptionEventArgs e)
@@ -117,5 +128,13 @@ public partial class App : System.Windows.Application
         {
             _showingFatalError = false;
         }
+    }
+
+    private static string GetInnermostMessage(Exception ex)
+    {
+        var current = ex;
+        while (current.InnerException != null)
+            current = current.InnerException;
+        return current.Message;
     }
 }
