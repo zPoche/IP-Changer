@@ -103,7 +103,7 @@ public partial class App : System.Windows.Application
                 .AppendLine("Bitte Anwendung neu starten.")
                 .ToString();
 
-            MessageBox.Show(
+            System.Windows.MessageBox.Show(
                 full,
                 "IP-Changer – Startfehler",
                 MessageBoxButton.OK,
