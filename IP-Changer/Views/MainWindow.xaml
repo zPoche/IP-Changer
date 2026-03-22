@@ -11,6 +11,9 @@
                  Width="1020"
                  MinHeight="560"
                  MinWidth="880"
+                 WindowState="Normal"
+                 ShowInTaskbar="True"
+                 Visibility="Visible"
                  WindowStartupLocation="CenterScreen"
                  GlowBrush="{DynamicResource MahApps.Brushes.Accent}">
     <mah:MetroWindow.Resources>
