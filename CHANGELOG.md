@@ -2,6 +2,17 @@
 
 Alle wichtigen Änderungen werden hier dokumentiert.
 
+## [1.0.9] – 2026-03-23
+
+### Neu
+
+- Live-Adapter-Bereich um ein **IP-Ping-Feature** erweitert (IPv4-Ziel eingeben, Ping starten, Ergebnis direkt in der Oberfläche).
+
+### Technisch
+
+- `MainViewModel`: neuer `PingCommand` mit asynchroner Ping-Logik (`System.Net.NetworkInformation.Ping`), IPv4-Validierung, Busy-Status und Logging.
+- `MainWindow`: neue UI-Zeile für Ping-Eingabe, Start-Button, ProgressRing und Ergebnisanzeige.
+
 ## [1.0.3] – 2026-03-20
 
 ### Geändert
