@@ -2,6 +2,20 @@
 
 Alle wichtigen Änderungen werden hier dokumentiert.
 
+## [1.1.0] – 2026-03-23
+
+### Neu
+
+- Neuer Tab **Werkzeuge** mit drei Netzwerktools:
+  - **IP-Ping** (IPv4-Test mit Laufzeit/Statusanzeige)
+  - **Portscanner (TCP)** mit Portlisten und Portbereichen
+  - **Wake-on-LAN** (Magic Packet via Broadcast + UDP-Port)
+
+### Geändert
+
+- Hauptbereich auf **Tab-Navigation** umgestellt: `Übersicht` (Adapter/Profil/Anwenden) und `Werkzeuge` (Diagnose-Tools).
+- Ping-Funktion aus dem Live-Adapter-Bereich in den Werkzeug-Tab verschoben.
+
 ## [1.0.9] – 2026-03-23
 
 ### Neu
