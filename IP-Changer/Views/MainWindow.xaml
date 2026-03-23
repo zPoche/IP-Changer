@@ -217,6 +217,41 @@
                                 <TextBlock Grid.Row="7" Grid.Column="0" Text="WLAN-SSID" Style="{StaticResource DetailLabelStyle}" />
                                 <TextBlock Grid.Row="7" Grid.Column="1" Text="{Binding LiveWifiSsid, Mode=OneWay}" Style="{StaticResource DetailValueStyle}" />
                             </Grid>
+                            <Separator Margin="0,4,0,10" />
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto" MinWidth="132" />
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Grid.Column="0"
+                                           Text="IP-Ping"
+                                           Style="{StaticResource DetailLabelStyle}"
+                                           Margin="0,6,14,0" />
+                                <TextBox Grid.Column="1"
+                                         Text="{Binding PingTarget, UpdateSourceTrigger=PropertyChanged}"
+                                         mah:TextBoxHelper.Watermark="IPv4 (z. B. 8.8.8.8)"
+                                         MinWidth="180"
+                                         Margin="0,0,10,8" />
+                                <Button Grid.Column="2"
+                                        Content="Ping starten"
+                                        Command="{Binding PingCommand}"
+                                        IsEnabled="{Binding CanPing}"
+                                        Padding="14,6"
+                                        Margin="0,0,10,8" />
+                                <mah:ProgressRing Grid.Column="3"
+                                                  Width="24"
+                                                  Height="24"
+                                                  IsActive="{Binding IsPinging}"
+                                                  VerticalAlignment="Center"
+                                                  Margin="0,0,0,8"
+                                                  Visibility="{Binding IsPinging, Converter={StaticResource BoolToVis}}" />
+                            </Grid>
+                            <TextBlock Text="{Binding PingResult, Mode=OneWay}"
+                                       Opacity="0.75"
+                                       Margin="0,0,0,2"
+                                       TextWrapping="Wrap" />
                         </StackPanel>
                     </Border>
 

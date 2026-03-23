@@ -1,5 +1,6 @@
 using System.Collections.ObjectModel;
 using System.IO;
+using System.Net.NetworkInformation;
 using System.Text.Json;
 using System.Windows.Input;
 using System.Windows.Threading;
@@ -27,6 +28,9 @@ public sealed class MainViewModel : ViewModelBase
     private string _lastOperation = "—";
     private string _currentTime = string.Empty;
     private bool _isElevated = true;
+    private string _pingTarget = "8.8.8.8";
+    private string _pingResult = "—";
+    private bool _isPinging;
 
     public MainViewModel(
         ILoggingService log,
@@ -58,6 +62,7 @@ public sealed class MainViewModel : ViewModelBase
         OpenSettingsCommand = new RelayCommand(_ => OpenSettings());
         CheckUpdatesCommand = new AsyncRelayCommand(_ => CheckUpdatesAsync(fromStartup: false));
         OpenAboutCommand = new RelayCommand(_ => OpenAbout());
+        PingCommand = new AsyncRelayCommand(_ => PingAsync(), _ => CanPing);
 
         LoadProfiles();
         Settings = _settingsService.Load();
@@ -160,6 +165,7 @@ public sealed class MainViewModel : ViewModelBase
     public bool IsElevated => _isElevated;
 
     public bool CanApply => CanApplyInternal();
+    public bool CanPing => !IsPinging && !string.IsNullOrWhiteSpace(PingTarget);
 
     public bool HasSelectedProfile => SelectedProfile != null;
 
@@ -228,6 +234,38 @@ public sealed class MainViewModel : ViewModelBase
 
     public NetworkAdapterInfo? CurrentAdapterStatus => SelectedStatusAdapter;
 
+    public string PingTarget
+    {
+        get => _pingTarget;
+        set
+        {
+            if (SetProperty(ref _pingTarget, value))
+            {
+                Raise(nameof(CanPing));
+                ((AsyncRelayCommand)PingCommand).NotifyCanExecuteChanged();
+            }
+        }
+    }
+
+    public string PingResult
+    {
+        get => _pingResult;
+        set => SetProperty(ref _pingResult, value);
+    }
+
+    public bool IsPinging
+    {
+        get => _isPinging;
+        set
+        {
+            if (SetProperty(ref _isPinging, value))
+            {
+                Raise(nameof(CanPing));
+                ((AsyncRelayCommand)PingCommand).NotifyCanExecuteChanged();
+            }
+        }
+    }
+
     public ICommand RefreshAdaptersCommand { get; }
     public ICommand NewProfileCommand { get; }
     public ICommand EditProfileCommand { get; }
@@ -241,6 +279,7 @@ public sealed class MainViewModel : ViewModelBase
     public ICommand OpenSettingsCommand { get; }
     public ICommand CheckUpdatesCommand { get; }
     public ICommand OpenAboutCommand { get; }
+    public ICommand PingCommand { get; }
 
     public IReadOnlyList<NetworkProfile> GetFavoriteProfiles() =>
         Profiles.Where(p => p.IsFavorite).ToList();
@@ -565,6 +604,53 @@ public sealed class MainViewModel : ViewModelBase
         if (!fromStartup)
         {
             _dialogs.ShowInformation($"{r.Message}\n\nInstalliert: {r.CurrentVersion}", "Update-Prüfung");
+        }
+    }
+
+    private async Task PingAsync()
+    {
+        var target = PingTarget.Trim();
+        if (!IPv4Validation.IsValidIpv4(target))
+        {
+            PingResult = "Ungültige IPv4-Adresse.";
+            LastOperation = "Ping fehlgeschlagen: Ungültige IPv4-Adresse.";
+            return;
+        }
+
+        IsPinging = true;
+        PingResult = $"Ping läuft zu {target} …";
+        try
+        {
+            using var ping = new Ping();
+            var reply = await ping.SendPingAsync(target, 2000);
+            if (reply.Status == IPStatus.Success)
+            {
+                var replyAddress = reply.Address?.ToString() ?? target;
+                PingResult = $"Antwort von {replyAddress}: Zeit={reply.RoundtripTime} ms";
+                LastOperation = $"Ping erfolgreich: {replyAddress} ({reply.RoundtripTime} ms).";
+                _log.Info($"Ping erfolgreich: {replyAddress} in {reply.RoundtripTime} ms.");
+                return;
+            }
+
+            PingResult = $"Keine Antwort von {target} ({reply.Status}).";
+            LastOperation = $"Ping fehlgeschlagen: {reply.Status}.";
+            _log.Warn($"Ping fehlgeschlagen ({target}): {reply.Status}.");
+        }
+        catch (PingException ex)
+        {
+            PingResult = $"Ping-Fehler: {ex.InnerException?.Message ?? ex.Message}";
+            LastOperation = "Ping fehlgeschlagen.";
+            _log.Warn("Ping-Fehler: " + ex.Message);
+        }
+        catch (Exception ex)
+        {
+            PingResult = $"Unerwarteter Fehler: {ex.Message}";
+            LastOperation = "Ping fehlgeschlagen.";
+            _log.Error("Ping", ex);
+        }
+        finally
+        {
+            IsPinging = false;
         }
     }
 
