@@ -812,7 +812,7 @@ public sealed class MainViewModel : ViewModelBase
 
         try
         {
-            Clipboard.SetText(text);
+            System.Windows.Clipboard.SetText(text);
             LastOperation = "In Zwischenablage kopiert.";
         }
         catch (Exception ex)
