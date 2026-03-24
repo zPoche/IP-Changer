@@ -58,6 +58,7 @@ public partial class MainWindow
             _viewModel = new MainViewModel(_log, settingsService, persistence, adapters, netCfg, updates, dialogs);
             DataContext = _viewModel;
             _viewModel.ProfilesChanged += (_, _) => RebuildTrayMenu();
+            _viewModel.ToolTargetsChanged += (_, _) => RebuildTrayMenu();
 
             InitializeTrayIcon();
             RebuildTrayMenu();

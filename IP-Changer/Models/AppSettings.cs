@@ -38,5 +38,4 @@ public class AppSettings
 
     public string LastWakeOnLanPort { get; set; } = "9";
 
-    public List<WakeOnLanTarget> WakeOnLanTargets { get; set; } = new();
 }

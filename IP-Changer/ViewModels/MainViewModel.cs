@@ -1,4 +1,5 @@
 using System.Collections.ObjectModel;
+using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.IO;
 using System.Net;
@@ -72,7 +73,6 @@ public sealed class MainViewModel : ViewModelBase
     private CancellationTokenSource? _continuousPingCts;
     private UndoableAppliedProfile? _lastRollback;
     private string _portScanExportPath = string.Empty;
-    private bool _useSelectedAdapterAsSource = true;
     private readonly HashSet<int> _lastOpenPorts = new();
 
     public MainViewModel(
@@ -159,6 +159,7 @@ public sealed class MainViewModel : ViewModelBase
     public ObservableCollection<WakeOnLanTarget> WakeOnLanTargets { get; } = new();
 
     public event EventHandler? ProfilesChanged;
+    public event EventHandler? ToolTargetsChanged;
 
     public string SearchText
     {
@@ -196,7 +197,10 @@ public sealed class MainViewModel : ViewModelBase
         set
         {
             if (SetProperty(ref _selectedStatusAdapter, value))
+            {
+                SyncLiveDnsItems();
                 RaiseLiveAdapterProperties();
+            }
         }
     }
 
@@ -208,8 +212,10 @@ public sealed class MainViewModel : ViewModelBase
             if (SetProperty(ref _isBusy, value))
             {
                 Raise(nameof(CanApply));
+                Raise(nameof(CanUndoLastApply));
                 ((AsyncRelayCommand)ApplyProfileCommand).NotifyCanExecuteChanged();
                 ((AsyncRelayCommand)ApplyProfileDoubleClickCommand).NotifyCanExecuteChanged();
+                ((AsyncRelayCommand)UndoLastApplyCommand).NotifyCanExecuteChanged();
             }
         }
     }
@@ -470,6 +476,7 @@ public sealed class MainViewModel : ViewModelBase
             {
                 ((RelayCommand)DeleteWakeOnLanTargetCommand).RaiseCanExecuteChanged();
                 ((RelayCommand)UseWakeOnLanTargetCommand).RaiseCanExecuteChanged();
+                ToolTargetsChanged?.Invoke(this, EventArgs.Empty);
             }
         }
     }
@@ -484,12 +491,6 @@ public sealed class MainViewModel : ViewModelBase
     {
         get => _portScanExportPath;
         private set => SetProperty(ref _portScanExportPath, value);
-    }
-
-    public bool UseSelectedAdapterAsSource
-    {
-        get => _useSelectedAdapterAsSource;
-        set => SetProperty(ref _useSelectedAdapterAsSource, value);
     }
 
     public ICommand RefreshAdaptersCommand { get; }
@@ -560,6 +561,7 @@ public sealed class MainViewModel : ViewModelBase
         var doc = _toolProfiles.Load();
         foreach (var target in doc.WakeOnLanTargets)
             WakeOnLanTargets.Add(target);
+        ToolTargetsChanged?.Invoke(this, EventArgs.Empty);
     }
 
     private void PersistToolDefaultsToSettings()
@@ -571,6 +573,7 @@ public sealed class MainViewModel : ViewModelBase
         Settings.LastWakeOnLanBroadcast = WakeOnLanBroadcast.Trim();
         Settings.LastWakeOnLanPort = WakeOnLanPort.Trim();
         _settingsService.Save(Settings);
+        Raise(nameof(Settings));
     }
 
     private async Task ContinuousPingAsync()
@@ -676,6 +679,7 @@ public sealed class MainViewModel : ViewModelBase
         }
 
         PersistWakeOnLanTargets();
+        PersistToolDefaultsToSettings();
         LastOperation = "Wake-on-LAN-Ziel gespeichert.";
     }
 
@@ -685,6 +689,7 @@ public sealed class MainViewModel : ViewModelBase
         WakeOnLanMac = SelectedWakeOnLanTarget.MacAddress;
         WakeOnLanBroadcast = SelectedWakeOnLanTarget.BroadcastAddress;
         WakeOnLanPort = SelectedWakeOnLanTarget.Port.ToString();
+        PersistToolDefaultsToSettings();
         LastOperation = "Wake-on-LAN-Ziel übernommen.";
     }
 
@@ -693,6 +698,7 @@ public sealed class MainViewModel : ViewModelBase
         if (SelectedWakeOnLanTarget == null) return;
         WakeOnLanTargets.Remove(SelectedWakeOnLanTarget);
         PersistWakeOnLanTargets();
+        PersistToolDefaultsToSettings();
         LastOperation = "Wake-on-LAN-Ziel gelöscht.";
     }
 
@@ -703,6 +709,7 @@ public sealed class MainViewModel : ViewModelBase
             .OrderBy(t => t.Name, StringComparer.OrdinalIgnoreCase)
             .ToList();
         _toolProfiles.Save(doc);
+        ToolTargetsChanged?.Invoke(this, EventArgs.Empty);
     }
 
     private async Task PingLiveDnsItemAsync(object? parameter)
@@ -877,6 +884,35 @@ public sealed class MainViewModel : ViewModelBase
         LastOperation = ok ? "Rollback angewendet." : "Rollback fehlgeschlagen.";
     }
 
+    private NetworkProfile? BuildRollbackProfile()
+    {
+        var adapter = SelectedStatusAdapter;
+        if (adapter == null)
+            return null;
+
+        var dnsServers = ParseDnsAddresses(adapter.DnsServers)
+            .Select(a => new DnsServerEntry { Address = a })
+            .ToList();
+
+        var mode = adapter.DhcpEnabled ? IpAddressMode.Dhcp : IpAddressMode.Static;
+        var profileName = $"Rollback {adapter.Name} {DateTime.Now:yyyy-MM-dd HH:mm:ss}";
+
+        return new NetworkProfile
+        {
+            Id = Guid.NewGuid(),
+            Name = profileName,
+            Description = "Automatisch erstellter Snapshot vor Profil-Anwendung",
+            AdapterInterfaceId = adapter.InterfaceId,
+            Mode = mode,
+            Ipv4 = mode == IpAddressMode.Static && adapter.Ipv4 != "—" ? adapter.Ipv4 : null,
+            SubnetMask = mode == IpAddressMode.Static && adapter.SubnetMask != "—" ? adapter.SubnetMask : null,
+            Gateway = mode == IpAddressMode.Static && adapter.Gateway != "—" ? adapter.Gateway : null,
+            DnsServers = dnsServers,
+            WinsServers = new List<string>(),
+            IsFavorite = false
+        };
+    }
+
     private static List<string> ParseDnsAddresses(string value)
     {
         if (string.IsNullOrWhiteSpace(value) || value == "—")
@@ -938,6 +974,7 @@ public sealed class MainViewModel : ViewModelBase
             Adapters.Add(a);
 
         SelectedStatusAdapter ??= Adapters.FirstOrDefault(a => a.OperationalStatus == "Up") ?? Adapters.FirstOrDefault();
+        SyncLiveDnsItems();
         ApplyFilter();
         RefreshProfileAdapterSubtitles();
         RaiseProfilePreviewProperties();
@@ -1067,13 +1104,16 @@ public sealed class MainViewModel : ViewModelBase
                 return false;
             }
 
+            var rollbackCandidate = BuildRollbackProfile();
             IsBusy = true;
             try
             {
                 var result = await _netCfg.ApplyProfileAsync(SelectedProfile, netshName);
                 if (result.Success)
                 {
-                    _lastRollback = new UndoableAppliedProfile { Profile = SelectedProfile.Clone() };
+                    if (rollbackCandidate != null)
+                        _lastRollback = new UndoableAppliedProfile { Profile = rollbackCandidate };
+                    ((AsyncRelayCommand)UndoLastApplyCommand).NotifyCanExecuteChanged();
                     LastOperation = "OK: " + result.Message;
                     _log.Info($"Profil angewendet: {SelectedProfile.Name}");
                     _dialogs.ShowInformation(result.Message, "Erfolg");
@@ -1164,8 +1204,18 @@ public sealed class MainViewModel : ViewModelBase
         if (!SettingsWindow.ShowDialog(vm, System.Windows.Application.Current.MainWindow))
             return;
         var updated = vm.ToModel();
+        updated.LastPingTarget = PingTarget.Trim();
+        updated.LastPortScanTarget = PortScanTarget.Trim();
+        updated.LastPortScanPorts = PortScanPorts.Trim();
+        updated.LastWakeOnLanMac = WakeOnLanMac.Trim();
+        updated.LastWakeOnLanBroadcast = WakeOnLanBroadcast.Trim();
+        updated.LastWakeOnLanPort = WakeOnLanPort.Trim();
         _settingsService.Save(updated);
         Settings = updated;
+        ApplyToolDefaultsFromSettings();
+        Raise(nameof(CanStartContinuousPing));
+        ((AsyncRelayCommand)ContinuousPingCommand).NotifyCanExecuteChanged();
+        ((RelayCommand)ExportPortScanResultCommand).RaiseCanExecuteChanged();
         Raise(nameof(Settings));
         LastOperation = "Einstellungen gespeichert.";
     }
@@ -1220,20 +1270,41 @@ public sealed class MainViewModel : ViewModelBase
         PingResult = $"Ping läuft zu {target} …";
         try
         {
+            var timeoutMs = Math.Clamp(Settings.PingTimeoutMs, 500, 15000);
+            var attempts = Math.Clamp(Settings.PingCount, 1, 20);
+            var successfulReplies = new List<long>();
+            string? lastStatus = null;
+
             using var ping = new Ping();
-            var reply = await ping.SendPingAsync(target, 2000);
-            if (reply.Status == IPStatus.Success)
+            for (var i = 0; i < attempts; i++)
             {
-                var replyAddress = reply.Address?.ToString() ?? target;
-                PingResult = $"Antwort von {replyAddress}: Zeit={reply.RoundtripTime} ms";
-                LastOperation = $"Ping erfolgreich: {replyAddress} ({reply.RoundtripTime} ms).";
-                _log.Info($"Ping erfolgreich: {replyAddress} in {reply.RoundtripTime} ms.");
-                return;
+                var reply = await ping.SendPingAsync(target, timeoutMs);
+                lastStatus = reply.Status.ToString();
+
+                if (reply.Status == IPStatus.Success)
+                {
+                    successfulReplies.Add(reply.RoundtripTime);
+                }
             }
 
-            PingResult = $"Keine Antwort von {target} ({reply.Status}).";
-            LastOperation = $"Ping fehlgeschlagen: {reply.Status}.";
-            _log.Warn($"Ping fehlgeschlagen ({target}): {reply.Status}.");
+            if (successfulReplies.Count > 0)
+            {
+                var min = successfulReplies.Min();
+                var max = successfulReplies.Max();
+                var avg = Math.Round(successfulReplies.Average(), 1);
+                PingResult = $"Ping OK: {successfulReplies.Count}/{attempts} Antworten, Min/Avg/Max={min}/{avg}/{max} ms";
+                LastOperation = $"Ping erfolgreich: {successfulReplies.Count}/{attempts} Antworten.";
+                _log.Info($"Ping erfolgreich ({target}): {successfulReplies.Count}/{attempts} Antworten.");
+            }
+            else
+            {
+                PingResult = $"Keine Antwort von {target} ({lastStatus ?? "Timeout"}).";
+                LastOperation = $"Ping fehlgeschlagen: {lastStatus ?? "Timeout"}.";
+                _log.Warn($"Ping fehlgeschlagen ({target}): {lastStatus ?? "Timeout"}.");
+            }
+
+            AddPingHistory($"{DateTime.Now:HH:mm:ss} {target} {PingResult}");
+            PersistToolDefaultsToSettings();
         }
         catch (PingException ex)
         {
@@ -1307,26 +1378,47 @@ public sealed class MainViewModel : ViewModelBase
 
         IsPortScanning = true;
         PortScanResult = $"Scanne {target} ({resolvedIp}) auf {ports.Count} Ports …";
+        _lastOpenPorts.Clear();
+        ((RelayCommand)ExportPortScanResultCommand).RaiseCanExecuteChanged();
+        PortScanExportPath = string.Empty;
         try
         {
-            var openPorts = new List<int>();
-            foreach (var port in ports)
-            {
-                if (await IsTcpPortOpenAsync(resolvedIp, port, timeoutMs: 300))
-                    openPorts.Add(port);
-            }
+            var timeoutMs = Math.Clamp(Settings.PingTimeoutMs, 500, 15000);
+            var parallelism = Math.Clamp(Settings.PortScanParallelism, 1, 200);
+            var openPorts = new ConcurrentBag<int>();
 
-            if (openPorts.Count == 0)
+            await Parallel.ForEachAsync(
+                ports,
+                new ParallelOptions
+                {
+                    MaxDegreeOfParallelism = parallelism
+                },
+                async (port, ct) =>
+                {
+                    if (await IsTcpPortOpenAsync(resolvedIp, port, timeoutMs, ct))
+                        openPorts.Add(port);
+                });
+
+            var orderedOpenPorts = openPorts.Distinct().OrderBy(p => p).ToList();
+            foreach (var openPort in orderedOpenPorts)
+            {
+                _lastOpenPorts.Add(openPort);
+            }
+            ((RelayCommand)ExportPortScanResultCommand).RaiseCanExecuteChanged();
+
+            if (orderedOpenPorts.Count == 0)
             {
                 PortScanResult = $"Keine offenen Ports gefunden auf {target} ({resolvedIp}).";
                 LastOperation = "Portscan abgeschlossen: keine offenen Ports.";
                 _log.Info($"Portscan abgeschlossen ({target}/{resolvedIp}): keine offenen Ports.");
+                PersistToolDefaultsToSettings();
                 return;
             }
 
-            PortScanResult = $"Offene Ports auf {target} ({resolvedIp}): {string.Join(", ", openPorts)}";
-            LastOperation = $"Portscan abgeschlossen: {openPorts.Count} offene Ports.";
-            _log.Info($"Portscan abgeschlossen ({target}/{resolvedIp}): {string.Join(", ", openPorts)}");
+            PortScanResult = $"Offene Ports auf {target} ({resolvedIp}): {string.Join(", ", orderedOpenPorts)}";
+            LastOperation = $"Portscan abgeschlossen: {orderedOpenPorts.Count} offene Ports.";
+            _log.Info($"Portscan abgeschlossen ({target}/{resolvedIp}): {string.Join(", ", orderedOpenPorts)}");
+            PersistToolDefaultsToSettings();
         }
         catch (Exception ex)
         {
@@ -1376,6 +1468,7 @@ public sealed class MainViewModel : ViewModelBase
             WakeOnLanResult = $"Magic Packet gesendet an {WakeOnLanMac.Trim()} via {broadcastIp}:{port}.";
             LastOperation = "Wake-on-LAN gesendet.";
             _log.Info($"Wake-on-LAN gesendet an {WakeOnLanMac.Trim()} via {broadcastIp}:{port}.");
+            PersistToolDefaultsToSettings();
         }
         catch (Exception ex)
         {
@@ -1482,11 +1575,11 @@ public sealed class MainViewModel : ViewModelBase
         return true;
     }
 
-    private static async Task<bool> IsTcpPortOpenAsync(IPAddress target, int port, int timeoutMs)
+    private static async Task<bool> IsTcpPortOpenAsync(IPAddress target, int port, int timeoutMs, CancellationToken cancellationToken = default)
     {
         using var client = new TcpClient();
         var connectTask = client.ConnectAsync(target, port);
-        var timeoutTask = Task.Delay(timeoutMs);
+        var timeoutTask = Task.Delay(timeoutMs, cancellationToken);
         var completed = await Task.WhenAny(connectTask, timeoutTask);
         if (completed != connectTask) return false;
         return client.Connected;
@@ -1591,6 +1684,17 @@ public sealed class MainViewModel : ViewModelBase
         Raise(nameof(LiveDhcp));
         Raise(nameof(LiveNetworkCategory));
         Raise(nameof(LiveWifiSsid));
+    }
+
+    private void SyncLiveDnsItems()
+    {
+        LiveDnsItems.Clear();
+        if (SelectedStatusAdapter == null) return;
+
+        foreach (var dns in ParseDnsAddresses(SelectedStatusAdapter.DnsServers))
+        {
+            LiveDnsItems.Add(new LiveDnsItem { Address = dns });
+        }
     }
 
     private void RefreshProfileAdapterSubtitles()
