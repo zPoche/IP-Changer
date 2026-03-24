@@ -57,6 +57,8 @@ public sealed class MainViewModel : ViewModelBase
     private bool _isElevated = true;
     private string _pingTarget = "8.8.8.8";
     private string _pingResult = "—";
+    private string _topPingStatus = "Ping: bereit";
+    private bool _isTopPingStatusError;
     private bool _isPinging;
     private string _portScanTarget = "127.0.0.1";
     private string _portScanPorts = "22,80,443";
@@ -332,6 +334,18 @@ public sealed class MainViewModel : ViewModelBase
         set => SetProperty(ref _pingResult, value);
     }
 
+    public string TopPingStatus
+    {
+        get => _topPingStatus;
+        private set => SetProperty(ref _topPingStatus, value);
+    }
+
+    public bool IsTopPingStatusError
+    {
+        get => _isTopPingStatusError;
+        private set => SetProperty(ref _isTopPingStatusError, value);
+    }
+
     public bool IsPinging
     {
         get => _isPinging;
@@ -585,6 +599,7 @@ public sealed class MainViewModel : ViewModelBase
         {
             PingResult = "Ungültige IPv4-Adresse.";
             LastOperation = "Dauer-Ping fehlgeschlagen: Ungültige IPv4-Adresse.";
+            SetTopPingStatus("Ping: ungültige IPv4-Adresse", isError: true);
             return;
         }
 
@@ -595,6 +610,7 @@ public sealed class MainViewModel : ViewModelBase
         IsContinuousPinging = true;
         IsPinging = true;
         PingResult = $"Dauer-Ping läuft zu {target} …";
+        SetTopPingStatus($"Ping: läuft zu {target} …", isError: false);
         try
         {
             using var ping = new Ping();
@@ -606,17 +622,24 @@ public sealed class MainViewModel : ViewModelBase
                     : $"{DateTime.Now:HH:mm:ss} {target} {reply.Status}";
                 AddPingHistory(line);
                 PingResult = line;
+                SetTopPingStatus(
+                    reply.Status == IPStatus.Success
+                        ? $"Ping {target}: {reply.RoundtripTime} ms"
+                        : $"Ping {target}: {reply.Status}",
+                    isError: reply.Status != IPStatus.Success);
                 await Task.Delay(500, token);
             }
         }
         catch (OperationCanceledException)
         {
             PingResult = "Dauer-Ping gestoppt.";
+            SetTopPingStatus("Ping: gestoppt", isError: false);
         }
         catch (Exception ex)
         {
             PingResult = "Dauer-Ping-Fehler: " + ex.Message;
             _log.Error("Dauer-Ping", ex);
+            SetTopPingStatus("Ping: Fehler", isError: true);
         }
         finally
         {
@@ -1263,11 +1286,13 @@ public sealed class MainViewModel : ViewModelBase
         {
             PingResult = "Ungültige IPv4-Adresse.";
             LastOperation = "Ping fehlgeschlagen: Ungültige IPv4-Adresse.";
+            SetTopPingStatus("Ping: ungültige IPv4-Adresse", isError: true);
             return;
         }
 
         IsPinging = true;
         PingResult = $"Ping läuft zu {target} …";
+        SetTopPingStatus($"Ping: läuft zu {target} …", isError: false);
         try
         {
             var timeoutMs = Math.Clamp(Settings.PingTimeoutMs, 500, 15000);
@@ -1295,12 +1320,14 @@ public sealed class MainViewModel : ViewModelBase
                 PingResult = $"Ping OK: {successfulReplies.Count}/{attempts} Antworten, Min/Avg/Max={min}/{avg}/{max} ms";
                 LastOperation = $"Ping erfolgreich: {successfulReplies.Count}/{attempts} Antworten.";
                 _log.Info($"Ping erfolgreich ({target}): {successfulReplies.Count}/{attempts} Antworten.");
+                SetTopPingStatus($"Ping {target}: {avg} ms (Ø)", isError: false);
             }
             else
             {
                 PingResult = $"Keine Antwort von {target} ({lastStatus ?? "Timeout"}).";
                 LastOperation = $"Ping fehlgeschlagen: {lastStatus ?? "Timeout"}.";
                 _log.Warn($"Ping fehlgeschlagen ({target}): {lastStatus ?? "Timeout"}.");
+                SetTopPingStatus($"Ping {target}: {lastStatus ?? "Timeout"}", isError: true);
             }
 
             AddPingHistory($"{DateTime.Now:HH:mm:ss} {target} {PingResult}");
@@ -1311,12 +1338,14 @@ public sealed class MainViewModel : ViewModelBase
             PingResult = $"Ping-Fehler: {ex.InnerException?.Message ?? ex.Message}";
             LastOperation = "Ping fehlgeschlagen.";
             _log.Warn("Ping-Fehler: " + ex.Message);
+            SetTopPingStatus($"Ping {target}: Fehler", isError: true);
         }
         catch (Exception ex)
         {
             PingResult = $"Unerwarteter Fehler: {ex.Message}";
             LastOperation = "Ping fehlgeschlagen.";
             _log.Error("Ping", ex);
+            SetTopPingStatus($"Ping {target}: Fehler", isError: true);
         }
         finally
         {
@@ -1695,6 +1724,12 @@ public sealed class MainViewModel : ViewModelBase
         {
             LiveDnsItems.Add(new LiveDnsItem { Address = dns });
         }
+    }
+
+    private void SetTopPingStatus(string message, bool isError)
+    {
+        TopPingStatus = message;
+        IsTopPingStatusError = isError;
     }
 
     private void RefreshProfileAdapterSubtitles()

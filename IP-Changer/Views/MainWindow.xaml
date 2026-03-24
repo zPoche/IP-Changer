@@ -42,6 +42,33 @@
             <Setter Property="TextWrapping" Value="Wrap" />
             <Setter Property="FontSize" Value="12" />
         </Style>
+        <Style x:Key="CategoryTabControl" TargetType="TabControl" BasedOn="{StaticResource MahApps.Styles.TabControl}">
+            <Setter Property="Margin" Value="0,4,0,0" />
+            <Setter Property="Background" Value="{DynamicResource MahApps.Brushes.Gray10}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource MahApps.Brushes.Gray7}" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="Padding" Value="4" />
+        </Style>
+        <Style x:Key="CategoryTabItem" TargetType="TabItem" BasedOn="{StaticResource MahApps.Styles.TabItem}">
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="FontSize" Value="13.5" />
+            <Setter Property="Padding" Value="18,8" />
+            <Setter Property="Margin" Value="0,0,6,0" />
+        </Style>
+        <Style x:Key="TopPingBannerBorder" TargetType="Border">
+            <Setter Property="CornerRadius" Value="8" />
+            <Setter Property="Padding" Value="12,8" />
+            <Setter Property="Margin" Value="0,0,0,12" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="Background" Value="#2E1F4D7A" />
+            <Setter Property="BorderBrush" Value="#FF5AAEFF" />
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding IsTopPingStatusError}" Value="True">
+                    <Setter Property="Background" Value="#33B64D4D" />
+                    <Setter Property="BorderBrush" Value="#FFD37B7B" />
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
         <Style x:Key="ProfileListBox" TargetType="ListBox" BasedOn="{StaticResource MahApps.Styles.ListBox}">
             <Setter Property="BorderThickness" Value="1" />
             <Setter Property="BorderBrush" Value="{DynamicResource MahApps.Brushes.Gray7}" />
@@ -175,11 +202,29 @@
                 </ListBox>
             </DockPanel>
 
-            <TabControl Grid.Column="1">
-                <TabItem Header="Übersicht">
+            <TabControl Grid.Column="1" Style="{StaticResource CategoryTabControl}">
+                <TabItem Header="Übersicht" Style="{StaticResource CategoryTabItem}">
                     <ScrollViewer VerticalScrollBarVisibility="Auto"
                                   HorizontalScrollBarVisibility="Disabled">
                         <StackPanel>
+                            <Border Style="{StaticResource TopPingBannerBorder}">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="*" />
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Text="PING"
+                                               FontWeight="Bold"
+                                               Opacity="0.92"
+                                               VerticalAlignment="Center"
+                                               Margin="0,0,10,0" />
+                                    <TextBlock Grid.Column="1"
+                                               Text="{Binding TopPingStatus}"
+                                               FontWeight="SemiBold"
+                                               TextWrapping="Wrap"
+                                               VerticalAlignment="Center" />
+                                </Grid>
+                            </Border>
                             <!-- Live-Adapter -->
                             <Border Style="{StaticResource App.SectionCard}">
                                 <StackPanel>
@@ -453,7 +498,7 @@
                     </ScrollViewer>
                 </TabItem>
 
-                <TabItem Header="Werkzeuge">
+                <TabItem Header="Werkzeuge" Style="{StaticResource CategoryTabItem}">
                     <ScrollViewer VerticalScrollBarVisibility="Auto"
                                   HorizontalScrollBarVisibility="Disabled">
                         <StackPanel>

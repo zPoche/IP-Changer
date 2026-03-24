@@ -24,8 +24,8 @@
             <Style x:Key="App.Button.Accent" TargetType="Button" BasedOn="{StaticResource MahApps.Styles.Button}">
                 <Setter Property="Foreground" Value="#FFFFFFFF" />
                 <Setter Property="FontWeight" Value="SemiBold" />
-                <Setter Property="Background" Value="{DynamicResource MahApps.Brushes.Accent}" />
-                <Setter Property="BorderBrush" Value="{DynamicResource MahApps.Brushes.Accent2}" />
+                <Setter Property="Background" Value="#FF4EA8FF" />
+                <Setter Property="BorderBrush" Value="#FF74BCFF" />
             </Style>
 
             <Style x:Key="App.Button.Subtle" TargetType="Button" BasedOn="{StaticResource MahApps.Styles.Button}">
