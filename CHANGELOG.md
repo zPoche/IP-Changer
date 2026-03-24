@@ -2,6 +2,14 @@
 
 Alle wichtigen Änderungen werden hier dokumentiert.
 
+## [1.1.3] – 2026-03-23
+
+### Geändert
+
+- Ping-Rückmeldung ist jetzt im Hauptbereich sofort sichtbar (prominenter Status-Banner mit ms bzw. Fehlerstatus), auch bei Gateway-/DNS-Ping.
+- Kategorien-Umschaltung (`Übersicht` / `Werkzeuge`) wurde deutlich hervorgehoben und wirkt jetzt stärker wie eine echte Bereichsnavigation.
+- Akzentfarbe wurde sichtbar aufgehellt, um auf dem Dark-Theme mehr Kontrast und Modernität zu erzeugen.
+
 ## [1.1.2] – 2026-03-23
 
 ### Behoben
