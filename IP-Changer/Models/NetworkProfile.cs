@@ -72,9 +72,6 @@ public class NetworkProfile : INotifyPropertyChanged
 
     public List<DnsServerEntry> DnsServers { get; set; } = new();
 
-    /// <summary>TODO: WINS-Server bei Bedarf ergänzen.</summary>
-    public List<string> WinsServers { get; set; } = new();
-
     public bool IsFavorite
     {
         get => _isFavorite;
@@ -96,7 +93,6 @@ public class NetworkProfile : INotifyPropertyChanged
             SubnetMask = SubnetMask,
             Gateway = Gateway,
             DnsServers = DnsServers.Select(d => new DnsServerEntry { Address = d.Address }).ToList(),
-            WinsServers = WinsServers.ToList(),
             IsFavorite = IsFavorite
         };
     }

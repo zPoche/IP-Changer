@@ -28,7 +28,7 @@ namespace ProfileIpSwitcher;
 
 public partial class App : System.Windows.Application
 {
-    private readonly ILoggingService _startupLog = new LoggingService();
+    private readonly ILoggingService _startupLog = LoggingService.Shared;
     private bool _showingFatalError;
     private bool _exceptionHandlersRegistered;
 

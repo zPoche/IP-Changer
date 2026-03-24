@@ -2,6 +2,27 @@
 
 Alle wichtigen Änderungen werden hier dokumentiert.
 
+## [1.1.1] – 2026-03-24
+
+### Behoben
+
+- Netzwerkkategorie (Öffentlich/Privat/Domäne) wurde nie übersetzt – WMI `uint32` matchte nicht gegen `int`-Literale
+- Portscan: unbehandelte Task-Exceptions bei fehlgeschlagenen TCP-Verbindungen
+
+### Verbessert
+
+- Ping akzeptiert jetzt auch Hostnamen (DNS-Auflösung wie Portscan)
+- Adapter-Refresh läuft asynchron im Threadpool (UI friert nicht mehr ein)
+- Korruptionsschutz für `profiles.json` (Backup bei defekter Datei)
+- LoggingService als Singleton (eine gemeinsame Instanz)
+- MainViewModel implementiert `IDisposable` (Timer-Cleanup)
+
+### Aufgeräumt
+
+- Werkzeuge (Ping, Portscan, WoL) in eigenes `ToolsViewModel` extrahiert
+- `UpdateCheckResult` in eigene Datei verschoben
+- Unbenutzte `WinsServers`-Eigenschaft und leeres `<ApplicationIcon />`-Tag entfernt
+
 ## [1.0.9] – 2026-03-23
 
 ### Neu

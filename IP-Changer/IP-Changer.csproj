@@ -4,9 +4,9 @@
     <OutputType>WinExe</OutputType>
     <TargetFramework>net8.0-windows</TargetFramework>
     <!-- SemVer; GitHub-Release-Tag z. B. v1.0.9 -->
-    <Version>1.0.9</Version>
-    <AssemblyVersion>1.0.9.0</AssemblyVersion>
-    <FileVersion>1.0.9.0</FileVersion>
+    <Version>1.1.1</Version>
+    <AssemblyVersion>1.1.1.0</AssemblyVersion>
+    <FileVersion>1.1.1.0</FileVersion>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <RootNamespace>ProfileIpSwitcher</RootNamespace>
@@ -14,7 +14,6 @@
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <UseWPF>true</UseWPF>
     <UseWindowsForms>true</UseWindowsForms>
-    <ApplicationIcon />
 
     <!--
       Portable Single-File (self-contained) für Windows x64:

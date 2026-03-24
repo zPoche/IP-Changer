@@ -11,7 +11,7 @@ public partial class MainWindow
 {
     private NotifyIcon? _notifyIcon;
     private MainViewModel? _viewModel;
-    private readonly ILoggingService _log = new LoggingService();
+    private readonly ILoggingService _log = LoggingService.Shared;
     private bool _shutdownRequested;
     private bool _initialized;
     private bool _startupVisibilityGuardActive = true;
@@ -26,7 +26,6 @@ public partial class MainWindow
         Closing += MainWindow_Closing;
         StateChanged += MainWindow_StateChanged;
 
-        // Kaltstart soll immer sichtbar sein; niemals minimiert starten.
         WindowState = WindowState.Normal;
         ShowInTaskbar = true;
         Visibility = Visibility.Visible;
@@ -176,6 +175,7 @@ public partial class MainWindow
     {
         if (_shutdownRequested)
         {
+            _viewModel?.Dispose();
             _notifyIcon?.Dispose();
             _notifyIcon = null;
             _log.Info("Closing: reguläres Beenden.");
@@ -192,6 +192,7 @@ public partial class MainWindow
         }
         else
         {
+            _viewModel?.Dispose();
             _notifyIcon?.Dispose();
             _notifyIcon = null;
             _log.Info("Closing: Beenden ohne Tray-Minimierung.");
@@ -201,6 +202,7 @@ public partial class MainWindow
     private void Exit_Click(object sender, RoutedEventArgs e)
     {
         _shutdownRequested = true;
+        _viewModel?.Dispose();
         _notifyIcon?.Dispose();
         _notifyIcon = null;
         _log.Info("Exit_Click: Benutzer hat Beenden gewählt.");

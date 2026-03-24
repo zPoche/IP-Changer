@@ -4,6 +4,8 @@ namespace ProfileIpSwitcher.Services;
 
 public sealed class LoggingService : ILoggingService
 {
+    public static LoggingService Shared { get; } = new();
+
     private const long MaxBytesBeforeRotate = 5 * 1024 * 1024;
     private static readonly object Gate = new();
 

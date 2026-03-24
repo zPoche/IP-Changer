@@ -354,24 +354,24 @@
                                             <ColumnDefinition Width="Auto" />
                                         </Grid.ColumnDefinitions>
                                         <TextBox Grid.Column="0"
-                                                 Text="{Binding PingTarget, UpdateSourceTrigger=PropertyChanged}"
-                                                 mah:TextBoxHelper.Watermark="IPv4 (z. B. 8.8.8.8)"
+                                                 Text="{Binding Tools.PingTarget, UpdateSourceTrigger=PropertyChanged}"
+                                                 mah:TextBoxHelper.Watermark="IPv4 oder Hostname (z. B. 8.8.8.8, google.de)"
                                                  Margin="0,0,10,8" />
                                         <Button Grid.Column="1"
                                                 Content="Ping starten"
-                                                Command="{Binding PingCommand}"
-                                                IsEnabled="{Binding CanPing}"
+                                                Command="{Binding Tools.PingCommand}"
+                                                IsEnabled="{Binding Tools.CanPing}"
                                                 Padding="14,6"
                                                 Margin="0,0,10,8" />
                                         <mah:ProgressRing Grid.Column="2"
                                                           Width="24"
                                                           Height="24"
-                                                          IsActive="{Binding IsPinging}"
+                                                          IsActive="{Binding Tools.IsPinging}"
                                                           VerticalAlignment="Center"
                                                           Margin="0,0,0,8"
-                                                          Visibility="{Binding IsPinging, Converter={StaticResource BoolToVis}}" />
+                                                          Visibility="{Binding Tools.IsPinging, Converter={StaticResource BoolToVis}}" />
                                     </Grid>
-                                    <TextBlock Text="{Binding PingResult, Mode=OneWay}"
+                                    <TextBlock Text="{Binding Tools.PingResult, Mode=OneWay}"
                                                Opacity="0.75"
                                                Margin="0,0,0,2"
                                                TextWrapping="Wrap" />
@@ -403,27 +403,27 @@
                                         </Grid.RowDefinitions>
                                         <TextBlock Grid.Row="0" Grid.Column="0" Text="Host / IPv4" Style="{StaticResource DetailLabelStyle}" />
                                         <TextBox Grid.Row="0" Grid.Column="1"
-                                                 Text="{Binding PortScanTarget, UpdateSourceTrigger=PropertyChanged}"
+                                                 Text="{Binding Tools.PortScanTarget, UpdateSourceTrigger=PropertyChanged}"
                                                  mah:TextBoxHelper.Watermark="z. B. 192.168.1.10 oder localhost"
                                                  Margin="0,0,0,8" />
                                         <TextBlock Grid.Row="1" Grid.Column="0" Text="Ports" Style="{StaticResource DetailLabelStyle}" />
                                         <TextBox Grid.Row="1" Grid.Column="1"
-                                                 Text="{Binding PortScanPorts, UpdateSourceTrigger=PropertyChanged}"
+                                                 Text="{Binding Tools.PortScanPorts, UpdateSourceTrigger=PropertyChanged}"
                                                  mah:TextBoxHelper.Watermark="z. B. 22,80,443 oder 8000-8010" />
                                     </Grid>
                                     <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
                                         <Button Content="Portscan starten"
-                                                Command="{Binding PortScanCommand}"
-                                                IsEnabled="{Binding CanPortScan}"
+                                                Command="{Binding Tools.PortScanCommand}"
+                                                IsEnabled="{Binding Tools.CanPortScan}"
                                                 Padding="14,6" />
                                         <mah:ProgressRing Width="24"
                                                           Height="24"
-                                                          IsActive="{Binding IsPortScanning}"
+                                                          IsActive="{Binding Tools.IsPortScanning}"
                                                           VerticalAlignment="Center"
                                                           Margin="10,0,0,0"
-                                                          Visibility="{Binding IsPortScanning, Converter={StaticResource BoolToVis}}" />
+                                                          Visibility="{Binding Tools.IsPortScanning, Converter={StaticResource BoolToVis}}" />
                                     </StackPanel>
-                                    <TextBlock Text="{Binding PortScanResult, Mode=OneWay}"
+                                    <TextBlock Text="{Binding Tools.PortScanResult, Mode=OneWay}"
                                                Opacity="0.75"
                                                TextWrapping="Wrap" />
                                 </StackPanel>
@@ -455,32 +455,32 @@
                                         </Grid.RowDefinitions>
                                         <TextBlock Grid.Row="0" Grid.Column="0" Text="MAC-Adresse" Style="{StaticResource DetailLabelStyle}" />
                                         <TextBox Grid.Row="0" Grid.Column="1"
-                                                 Text="{Binding WakeOnLanMac, UpdateSourceTrigger=PropertyChanged}"
+                                                 Text="{Binding Tools.WakeOnLanMac, UpdateSourceTrigger=PropertyChanged}"
                                                  mah:TextBoxHelper.Watermark="z. B. 00:11:22:33:44:55"
                                                  Margin="0,0,0,8" />
                                         <TextBlock Grid.Row="1" Grid.Column="0" Text="Broadcast" Style="{StaticResource DetailLabelStyle}" />
                                         <TextBox Grid.Row="1" Grid.Column="1"
-                                                 Text="{Binding WakeOnLanBroadcast, UpdateSourceTrigger=PropertyChanged}"
+                                                 Text="{Binding Tools.WakeOnLanBroadcast, UpdateSourceTrigger=PropertyChanged}"
                                                  mah:TextBoxHelper.Watermark="z. B. 192.168.1.255"
                                                  Margin="0,0,0,8" />
                                         <TextBlock Grid.Row="2" Grid.Column="0" Text="UDP-Port" Style="{StaticResource DetailLabelStyle}" />
                                         <TextBox Grid.Row="2" Grid.Column="1"
-                                                 Text="{Binding WakeOnLanPort, UpdateSourceTrigger=PropertyChanged}"
+                                                 Text="{Binding Tools.WakeOnLanPort, UpdateSourceTrigger=PropertyChanged}"
                                                  mah:TextBoxHelper.Watermark="z. B. 9" />
                                     </Grid>
                                     <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
                                         <Button Content="Magic Packet senden"
-                                                Command="{Binding WakeOnLanCommand}"
-                                                IsEnabled="{Binding CanWakeOnLan}"
+                                                Command="{Binding Tools.WakeOnLanCommand}"
+                                                IsEnabled="{Binding Tools.CanWakeOnLan}"
                                                 Padding="14,6" />
                                         <mah:ProgressRing Width="24"
                                                           Height="24"
-                                                          IsActive="{Binding IsSendingWakeOnLan}"
+                                                          IsActive="{Binding Tools.IsSendingWakeOnLan}"
                                                           VerticalAlignment="Center"
                                                           Margin="10,0,0,0"
-                                                          Visibility="{Binding IsSendingWakeOnLan, Converter={StaticResource BoolToVis}}" />
+                                                          Visibility="{Binding Tools.IsSendingWakeOnLan, Converter={StaticResource BoolToVis}}" />
                                     </StackPanel>
-                                    <TextBlock Text="{Binding WakeOnLanResult, Mode=OneWay}"
+                                    <TextBlock Text="{Binding Tools.WakeOnLanResult, Mode=OneWay}"
                                                Opacity="0.75"
                                                TextWrapping="Wrap" />
                                 </StackPanel>

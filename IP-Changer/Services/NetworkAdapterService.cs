@@ -206,7 +206,8 @@ public sealed class NetworkAdapterService : INetworkAdapterService
                 var alias = mo["InterfaceAlias"]?.ToString();
                 var cat = mo["NetworkCategory"];
                 if (string.IsNullOrEmpty(alias)) continue;
-                var label = cat switch
+                var catInt = cat != null ? Convert.ToInt32(cat) : -1;
+                var label = catInt switch
                 {
                     0 => "Öffentlich",
                     1 => "Privat",
