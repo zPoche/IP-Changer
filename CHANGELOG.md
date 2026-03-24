@@ -2,6 +2,26 @@
 
 Alle wichtigen Änderungen werden hier dokumentiert.
 
+## [1.1.2] – 2026-03-23
+
+### Behoben
+
+- DNS-Einzelaktionen im Live-Bereich funktionieren wieder zuverlässig (per-item Ping/Kopieren auf synchronisierter DNS-Liste).
+- Portscan-Export ist wieder nutzbar: offene Ports werden korrekt erfasst und der Export-Button dynamisch aktiviert.
+- Tray-Menü wird bei Änderungen der Wake-on-LAN-Ziele sofort aktualisiert (ohne Neustart).
+- Rollback verwendet einen echten Snapshot des Adapterzustands vor der Profilanwendung.
+
+### Geändert
+
+- Tool-Einstellungen wirken jetzt zur Laufzeit:
+  - `PingCount` und `PingTimeoutMs` steuern den Ping-Lauf direkt.
+  - `PortScanParallelism` steuert den parallelen Portscan.
+- Letzte Tool-Eingaben (Ping/Portscan/WoL) werden konsistent gespeichert und erneut geladen.
+- UI-Polish für bessere Lesbarkeit und modernere, einheitliche Darstellung:
+  - konsistente Action-Button-Stile in Karten und Werkzeugen
+  - klarere visuelle Hierarchie und Abstände
+  - homogenere Card-Optik im Dark-Theme
+
 ## [1.1.0] – 2026-03-23
 
 ### Neu
