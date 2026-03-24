@@ -256,6 +256,42 @@
                                         <TextBlock Grid.Row="7" Grid.Column="0" Text="WLAN-SSID" Style="{StaticResource DetailLabelStyle}" />
                                         <TextBlock Grid.Row="7" Grid.Column="1" Text="{Binding LiveWifiSsid, Mode=OneWay}" Style="{StaticResource DetailValueStyle}" />
                                     </Grid>
+                                    <ItemsControl ItemsSource="{Binding LiveDnsItems}">
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate DataType="{x:Type models:LiveDnsItem}">
+                                                <StackPanel Orientation="Horizontal" Margin="0,0,0,6">
+                                                    <TextBlock Text="{Binding Address}" Width="180" VerticalAlignment="Center" />
+                                                    <Button Content="DNS kopieren"
+                                                            Command="{Binding DataContext.CopyLiveDnsItemCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                            CommandParameter="{Binding}"
+                                                            Margin="8,0,6,0"
+                                                            Padding="10,3" />
+                                                    <Button Content="DNS ping"
+                                                            Command="{Binding DataContext.PingLiveDnsItemCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                            CommandParameter="{Binding}"
+                                                            Padding="10,3" />
+                                                </StackPanel>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                    <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
+                                        <Button Content="Diagnose erstellen"
+                                                Command="{Binding RunDiagnosticsCommand}"
+                                                ToolTip="Erstellt Netzwerkdiagnose und kopiert sie optional in die Zwischenablage."
+                                                Padding="12,6" />
+                                        <Button Content="Letzte Änderung rückgängig"
+                                                Command="{Binding UndoLastApplyCommand}"
+                                                Margin="10,0,0,0"
+                                                Padding="12,6"
+                                                ToolTip="Wendet den zuletzt gesicherten Zustand wieder an." />
+                                    </StackPanel>
+                                    <TextBox Text="{Binding DiagnosticsResult, Mode=OneWay}"
+                                             Margin="0,8,0,0"
+                                             MinHeight="84"
+                                             MaxHeight="180"
+                                             IsReadOnly="True"
+                                             TextWrapping="Wrap"
+                                             VerticalScrollBarVisibility="Auto" />
                                 </StackPanel>
                             </Border>
 
@@ -428,6 +464,7 @@
                                             <ColumnDefinition Width="*" />
                                             <ColumnDefinition Width="Auto" />
                                             <ColumnDefinition Width="Auto" />
+                                            <ColumnDefinition Width="Auto" />
                                         </Grid.ColumnDefinitions>
                                         <TextBox Grid.Column="0"
                                                  Text="{Binding PingTarget, UpdateSourceTrigger=PropertyChanged}"
@@ -446,7 +483,21 @@
                                                           VerticalAlignment="Center"
                                                           Margin="0,0,0,8"
                                                           Visibility="{Binding IsPinging, Converter={StaticResource BoolToVis}}" />
+                                        <Button Grid.Column="3"
+                                                Content="Dauer-Ping"
+                                                Command="{Binding ContinuousPingCommand}"
+                                                IsEnabled="{Binding CanStartContinuousPing}"
+                                                Padding="12,6"
+                                                Margin="10,0,0,8" />
                                     </Grid>
+                                    <Button Content="Ping stoppen"
+                                            Command="{Binding StopPingCommand}"
+                                            IsEnabled="{Binding IsContinuousPinging}"
+                                            HorizontalAlignment="Left"
+                                            Margin="0,0,0,8"
+                                            Padding="12,6" />
+                                    <TextBlock Text="Ping-Historie (letzte 20):" Opacity="0.75" Margin="0,0,0,4" />
+                                    <ListBox ItemsSource="{Binding PingHistory}" Height="92" Margin="0,0,0,8" />
                                     <TextBlock Text="{Binding PingResult, Mode=OneWay}"
                                                Opacity="0.75"
                                                Margin="0,0,0,2"
@@ -498,9 +549,19 @@
                                                           VerticalAlignment="Center"
                                                           Margin="10,0,0,0"
                                                           Visibility="{Binding IsPortScanning, Converter={StaticResource BoolToVis}}" />
+                                        <Button Content="Ergebnis exportieren"
+                                                Command="{Binding ExportPortScanResultCommand}"
+                                                Margin="10,0,0,0"
+                                                Padding="12,6"
+                                                ToolTip="Exportiert offene Ports als TXT." />
                                     </StackPanel>
                                     <TextBlock Text="{Binding PortScanResult, Mode=OneWay}"
                                                Opacity="0.75"
+                                               TextWrapping="Wrap" />
+                                    <TextBlock Text="{Binding PortScanExportPath, Mode=OneWay}"
+                                               Opacity="0.6"
+                                               FontSize="11.5"
+                                               Margin="0,6,0,0"
                                                TextWrapping="Wrap" />
                                 </StackPanel>
                             </Border>
@@ -555,6 +616,24 @@
                                                           VerticalAlignment="Center"
                                                           Margin="10,0,0,0"
                                                           Visibility="{Binding IsSendingWakeOnLan, Converter={StaticResource BoolToVis}}" />
+                                        <Button Content="Als Ziel speichern"
+                                                Command="{Binding SaveWakeOnLanTargetCommand}"
+                                                Margin="10,0,0,0"
+                                                Padding="12,6" />
+                                    </StackPanel>
+                                    <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                                        <ComboBox Width="260"
+                                                  ItemsSource="{Binding WakeOnLanTargets}"
+                                                  SelectedItem="{Binding SelectedWakeOnLanTarget}"
+                                                  DisplayMemberPath="Name" />
+                                        <Button Content="Verwenden"
+                                                Command="{Binding UseWakeOnLanTargetCommand}"
+                                                Margin="10,0,0,0"
+                                                Padding="12,6" />
+                                        <Button Content="Löschen"
+                                                Command="{Binding DeleteWakeOnLanTargetCommand}"
+                                                Margin="8,0,0,0"
+                                                Padding="12,6" />
                                     </StackPanel>
                                     <TextBlock Text="{Binding WakeOnLanResult, Mode=OneWay}"
                                                Opacity="0.75"

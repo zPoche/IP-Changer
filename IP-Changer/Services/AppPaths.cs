@@ -10,4 +10,6 @@ public static class AppPaths
     public static string ProfilesPath => Path.Combine(AppDataFolder, "profiles.json");
 
     public static string SettingsPath => Path.Combine(AppDataFolder, "settings.json");
+
+    public static string ToolProfilesPath => Path.Combine(AppDataFolder, "toolProfiles.json");
 }

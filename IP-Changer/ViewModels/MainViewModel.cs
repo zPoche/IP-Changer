@@ -1,8 +1,10 @@
 using System.Collections.ObjectModel;
+using System.Diagnostics;
 using System.IO;
 using System.Net;
 using System.Net.NetworkInformation;
 using System.Net.Sockets;
+using System.Text;
 using System.Text.Json;
 using System.Windows;
 using System.Windows.Input;
@@ -16,6 +18,26 @@ namespace ProfileIpSwitcher.ViewModels;
 
 public sealed class MainViewModel : ViewModelBase
 {
+    private static readonly Dictionary<int, string> CommonPortNames = new()
+    {
+        [20] = "ftp-data",
+        [21] = "ftp",
+        [22] = "ssh",
+        [23] = "telnet",
+        [25] = "smtp",
+        [53] = "dns",
+        [80] = "http",
+        [110] = "pop3",
+        [123] = "ntp",
+        [143] = "imap",
+        [443] = "https",
+        [445] = "smb",
+        [3389] = "rdp",
+        [5432] = "postgresql",
+        [6379] = "redis",
+        [8080] = "http-alt"
+    };
+
     private readonly ILoggingService _log;
     private readonly ISettingsService _settingsService;
     private readonly IProfilePersistenceService _persistence;
@@ -23,6 +45,7 @@ public sealed class MainViewModel : ViewModelBase
     private readonly INetworkConfigurationService _netCfg;
     private readonly IUpdateCheckService _updates;
     private readonly IDialogService _dialogs;
+    private readonly IToolProfilesService _toolProfiles;
 
     private string _searchText = string.Empty;
     private NetworkProfile? _selectedProfile;
@@ -43,6 +66,14 @@ public sealed class MainViewModel : ViewModelBase
     private string _wakeOnLanPort = "9";
     private string _wakeOnLanResult = "—";
     private bool _isSendingWakeOnLan;
+    private string _diagnosticsResult = "—";
+    private WakeOnLanTarget? _selectedWakeOnLanTarget;
+    private bool _isContinuousPinging;
+    private CancellationTokenSource? _continuousPingCts;
+    private UndoableAppliedProfile? _lastRollback;
+    private string _portScanExportPath = string.Empty;
+    private bool _useSelectedAdapterAsSource = true;
+    private readonly HashSet<int> _lastOpenPorts = new();
 
     public MainViewModel(
         ILoggingService log,
@@ -51,7 +82,8 @@ public sealed class MainViewModel : ViewModelBase
         INetworkAdapterService adapters,
         INetworkConfigurationService netCfg,
         IUpdateCheckService updates,
-        IDialogService dialogs)
+        IDialogService dialogs,
+        IToolProfilesService? toolProfiles = null)
     {
         _log = log;
         _settingsService = settingsService;
@@ -60,6 +92,7 @@ public sealed class MainViewModel : ViewModelBase
         _netCfg = netCfg;
         _updates = updates;
         _dialogs = dialogs;
+        _toolProfiles = toolProfiles ?? new ToolProfilesService(log);
 
         RefreshAdaptersCommand = new RelayCommand(_ => RefreshAdapters());
         NewProfileCommand = new RelayCommand(_ => NewProfile());
@@ -75,13 +108,25 @@ public sealed class MainViewModel : ViewModelBase
         CheckUpdatesCommand = new AsyncRelayCommand(_ => CheckUpdatesAsync(fromStartup: false));
         OpenAboutCommand = new RelayCommand(_ => OpenAbout());
         PingCommand = new AsyncRelayCommand(_ => PingAsync(), _ => CanPing);
+        ContinuousPingCommand = new AsyncRelayCommand(_ => ContinuousPingAsync(), _ => CanStartContinuousPing);
+        StopPingCommand = new RelayCommand(_ => StopPing(), _ => IsPinging || IsContinuousPinging);
         PortScanCommand = new AsyncRelayCommand(_ => PortScanAsync(), _ => CanPortScan);
+        ExportPortScanResultCommand = new RelayCommand(_ => ExportPortScanResult(), _ => _lastOpenPorts.Count > 0);
         WakeOnLanCommand = new AsyncRelayCommand(_ => SendWakeOnLanAsync(), _ => CanWakeOnLan);
+        SaveWakeOnLanTargetCommand = new RelayCommand(_ => SaveWakeOnLanTarget(), _ => CanWakeOnLan);
+        UseWakeOnLanTargetCommand = new RelayCommand(_ => UseWakeOnLanTarget(), _ => SelectedWakeOnLanTarget != null);
+        DeleteWakeOnLanTargetCommand = new RelayCommand(_ => DeleteWakeOnLanTarget(), _ => SelectedWakeOnLanTarget != null);
         CopyTextCommand = new RelayCommand(CopyText, CanCopyText);
         PingAddressCommand = new AsyncRelayCommand(PingAddressAsync, _ => !IsPinging);
+        PingLiveDnsItemCommand = new AsyncRelayCommand(PingLiveDnsItemAsync, _ => !IsPinging);
+        CopyLiveDnsItemCommand = new RelayCommand(CopyLiveDnsItem, _ => true);
+        RunDiagnosticsCommand = new AsyncRelayCommand(_ => RunDiagnosticsAsync(), _ => !IsBusy && !IsPinging && !IsPortScanning);
+        UndoLastApplyCommand = new AsyncRelayCommand(_ => UndoLastApplyAsync(), _ => CanUndoLastApply);
 
         LoadProfiles();
         Settings = _settingsService.Load();
+        ApplyToolDefaultsFromSettings();
+        LoadWakeOnLanTargetsFromStorage();
         _isElevated = ElevationHelper.IsProcessElevated();
         if (!_isElevated)
         {
@@ -109,6 +154,9 @@ public sealed class MainViewModel : ViewModelBase
     public ObservableCollection<NetworkProfile> FilteredProfiles { get; } = new();
 
     public ObservableCollection<NetworkAdapterInfo> Adapters { get; } = new();
+    public ObservableCollection<LiveDnsItem> LiveDnsItems { get; } = new();
+    public ObservableCollection<string> PingHistory { get; } = new();
+    public ObservableCollection<WakeOnLanTarget> WakeOnLanTargets { get; } = new();
 
     public event EventHandler? ProfilesChanged;
 
@@ -395,6 +443,55 @@ public sealed class MainViewModel : ViewModelBase
         }
     }
 
+    public bool IsContinuousPinging
+    {
+        get => _isContinuousPinging;
+        private set
+        {
+            if (SetProperty(ref _isContinuousPinging, value))
+            {
+                Raise(nameof(CanStartContinuousPing));
+                ((AsyncRelayCommand)ContinuousPingCommand).NotifyCanExecuteChanged();
+                ((RelayCommand)StopPingCommand).RaiseCanExecuteChanged();
+            }
+        }
+    }
+
+    public bool CanStartContinuousPing => CanPing && !IsContinuousPinging;
+
+    public bool CanUndoLastApply => _lastRollback?.Profile != null && !IsBusy && _isElevated;
+
+    public WakeOnLanTarget? SelectedWakeOnLanTarget
+    {
+        get => _selectedWakeOnLanTarget;
+        set
+        {
+            if (SetProperty(ref _selectedWakeOnLanTarget, value))
+            {
+                ((RelayCommand)DeleteWakeOnLanTargetCommand).RaiseCanExecuteChanged();
+                ((RelayCommand)UseWakeOnLanTargetCommand).RaiseCanExecuteChanged();
+            }
+        }
+    }
+
+    public string DiagnosticsResult
+    {
+        get => _diagnosticsResult;
+        set => SetProperty(ref _diagnosticsResult, value);
+    }
+
+    public string PortScanExportPath
+    {
+        get => _portScanExportPath;
+        private set => SetProperty(ref _portScanExportPath, value);
+    }
+
+    public bool UseSelectedAdapterAsSource
+    {
+        get => _useSelectedAdapterAsSource;
+        set => SetProperty(ref _useSelectedAdapterAsSource, value);
+    }
+
     public ICommand RefreshAdaptersCommand { get; }
     public ICommand NewProfileCommand { get; }
     public ICommand EditProfileCommand { get; }
@@ -409,9 +506,19 @@ public sealed class MainViewModel : ViewModelBase
     public ICommand CheckUpdatesCommand { get; }
     public ICommand OpenAboutCommand { get; }
     public ICommand PingCommand { get; }
+    public ICommand ContinuousPingCommand { get; }
+    public ICommand StopPingCommand { get; }
     public ICommand PingAddressCommand { get; }
     public ICommand PortScanCommand { get; }
+    public ICommand ExportPortScanResultCommand { get; }
     public ICommand WakeOnLanCommand { get; }
+    public ICommand SaveWakeOnLanTargetCommand { get; }
+    public ICommand UseWakeOnLanTargetCommand { get; }
+    public ICommand DeleteWakeOnLanTargetCommand { get; }
+    public ICommand PingLiveDnsItemCommand { get; }
+    public ICommand CopyLiveDnsItemCommand { get; }
+    public ICommand RunDiagnosticsCommand { get; }
+    public ICommand UndoLastApplyCommand { get; }
     public ICommand CopyTextCommand { get; }
 
     public IReadOnlyList<NetworkProfile> GetFavoriteProfiles() =>
@@ -423,8 +530,366 @@ public sealed class MainViewModel : ViewModelBase
         return await ApplySelectedAsync(skipConfirm: true);
     }
 
+    public async Task<bool> SendWakeOnLanFromTrayAsync(WakeOnLanTarget target)
+    {
+        WakeOnLanMac = target.MacAddress;
+        WakeOnLanBroadcast = target.BroadcastAddress;
+        WakeOnLanPort = target.Port.ToString();
+        await SendWakeOnLanAsync();
+        return WakeOnLanResult.StartsWith("Magic Packet gesendet", StringComparison.OrdinalIgnoreCase);
+    }
+
     private bool CanApplyInternal() =>
         _isElevated && !IsBusy && SelectedProfile != null;
+
+    private void ApplyToolDefaultsFromSettings()
+    {
+        PingTarget = string.IsNullOrWhiteSpace(Settings.LastPingTarget) ? "8.8.8.8" : Settings.LastPingTarget;
+        PortScanTarget = string.IsNullOrWhiteSpace(Settings.LastPortScanTarget) ? "127.0.0.1" : Settings.LastPortScanTarget;
+        PortScanPorts = string.IsNullOrWhiteSpace(Settings.LastPortScanPorts) ? "22,80,443" : Settings.LastPortScanPorts;
+        WakeOnLanMac = Settings.LastWakeOnLanMac ?? string.Empty;
+        WakeOnLanBroadcast = string.IsNullOrWhiteSpace(Settings.LastWakeOnLanBroadcast)
+            ? "255.255.255.255"
+            : Settings.LastWakeOnLanBroadcast;
+        WakeOnLanPort = string.IsNullOrWhiteSpace(Settings.LastWakeOnLanPort) ? "9" : Settings.LastWakeOnLanPort;
+    }
+
+    private void LoadWakeOnLanTargetsFromStorage()
+    {
+        WakeOnLanTargets.Clear();
+        var doc = _toolProfiles.Load();
+        foreach (var target in doc.WakeOnLanTargets)
+            WakeOnLanTargets.Add(target);
+    }
+
+    private void PersistToolDefaultsToSettings()
+    {
+        Settings.LastPingTarget = PingTarget.Trim();
+        Settings.LastPortScanTarget = PortScanTarget.Trim();
+        Settings.LastPortScanPorts = PortScanPorts.Trim();
+        Settings.LastWakeOnLanMac = WakeOnLanMac.Trim();
+        Settings.LastWakeOnLanBroadcast = WakeOnLanBroadcast.Trim();
+        Settings.LastWakeOnLanPort = WakeOnLanPort.Trim();
+        _settingsService.Save(Settings);
+    }
+
+    private async Task ContinuousPingAsync()
+    {
+        if (IsContinuousPinging) return;
+
+        var target = PingTarget.Trim();
+        if (!IPv4Validation.IsValidIpv4(target))
+        {
+            PingResult = "Ungültige IPv4-Adresse.";
+            LastOperation = "Dauer-Ping fehlgeschlagen: Ungültige IPv4-Adresse.";
+            return;
+        }
+
+        _continuousPingCts?.Cancel();
+        _continuousPingCts = new CancellationTokenSource();
+        var token = _continuousPingCts.Token;
+
+        IsContinuousPinging = true;
+        IsPinging = true;
+        PingResult = $"Dauer-Ping läuft zu {target} …";
+        try
+        {
+            using var ping = new Ping();
+            while (!token.IsCancellationRequested)
+            {
+                var reply = await ping.SendPingAsync(target, Math.Clamp(Settings.PingTimeoutMs, 500, 15000));
+                var line = reply.Status == IPStatus.Success
+                    ? $"{DateTime.Now:HH:mm:ss} {target} {reply.RoundtripTime}ms"
+                    : $"{DateTime.Now:HH:mm:ss} {target} {reply.Status}";
+                AddPingHistory(line);
+                PingResult = line;
+                await Task.Delay(500, token);
+            }
+        }
+        catch (OperationCanceledException)
+        {
+            PingResult = "Dauer-Ping gestoppt.";
+        }
+        catch (Exception ex)
+        {
+            PingResult = "Dauer-Ping-Fehler: " + ex.Message;
+            _log.Error("Dauer-Ping", ex);
+        }
+        finally
+        {
+            IsContinuousPinging = false;
+            IsPinging = false;
+        }
+    }
+
+    private void StopPing()
+    {
+        _continuousPingCts?.Cancel();
+    }
+
+    private void AddPingHistory(string line)
+    {
+        PingHistory.Insert(0, line);
+        while (PingHistory.Count > 20)
+            PingHistory.RemoveAt(PingHistory.Count - 1);
+    }
+
+    private void SaveWakeOnLanTarget()
+    {
+        if (!TryParseMacAddress(WakeOnLanMac, out _))
+        {
+            LastOperation = "Wake-on-LAN-Ziel nicht gespeichert: ungültige MAC.";
+            return;
+        }
+
+        if (!IPAddress.TryParse(WakeOnLanBroadcast.Trim(), out var bcast) || bcast.AddressFamily != AddressFamily.InterNetwork)
+        {
+            LastOperation = "Wake-on-LAN-Ziel nicht gespeichert: ungültiger Broadcast.";
+            return;
+        }
+
+        if (!int.TryParse(WakeOnLanPort.Trim(), out var port) || port < 1 || port > 65535)
+        {
+            LastOperation = "Wake-on-LAN-Ziel nicht gespeichert: ungültiger Port.";
+            return;
+        }
+
+        var normalizedMac = WakeOnLanMac.Trim();
+        var existing = WakeOnLanTargets.FirstOrDefault(t =>
+            string.Equals(t.MacAddress, normalizedMac, StringComparison.OrdinalIgnoreCase));
+        if (existing != null)
+        {
+            existing.BroadcastAddress = WakeOnLanBroadcast.Trim();
+            existing.Port = port;
+            if (string.IsNullOrWhiteSpace(existing.Name))
+                existing.Name = normalizedMac;
+        }
+        else
+        {
+            WakeOnLanTargets.Add(new WakeOnLanTarget
+            {
+                Name = normalizedMac,
+                MacAddress = normalizedMac,
+                BroadcastAddress = WakeOnLanBroadcast.Trim(),
+                Port = port
+            });
+        }
+
+        PersistWakeOnLanTargets();
+        LastOperation = "Wake-on-LAN-Ziel gespeichert.";
+    }
+
+    private void UseWakeOnLanTarget()
+    {
+        if (SelectedWakeOnLanTarget == null) return;
+        WakeOnLanMac = SelectedWakeOnLanTarget.MacAddress;
+        WakeOnLanBroadcast = SelectedWakeOnLanTarget.BroadcastAddress;
+        WakeOnLanPort = SelectedWakeOnLanTarget.Port.ToString();
+        LastOperation = "Wake-on-LAN-Ziel übernommen.";
+    }
+
+    private void DeleteWakeOnLanTarget()
+    {
+        if (SelectedWakeOnLanTarget == null) return;
+        WakeOnLanTargets.Remove(SelectedWakeOnLanTarget);
+        PersistWakeOnLanTargets();
+        LastOperation = "Wake-on-LAN-Ziel gelöscht.";
+    }
+
+    private void PersistWakeOnLanTargets()
+    {
+        var doc = _toolProfiles.Load();
+        doc.WakeOnLanTargets = WakeOnLanTargets
+            .OrderBy(t => t.Name, StringComparer.OrdinalIgnoreCase)
+            .ToList();
+        _toolProfiles.Save(doc);
+    }
+
+    private async Task PingLiveDnsItemAsync(object? parameter)
+    {
+        if (parameter is LiveDnsItem item)
+        {
+            await PingAddressAsync(item.Address);
+            return;
+        }
+
+        await PingAddressAsync(parameter);
+    }
+
+    private void CopyLiveDnsItem(object? parameter)
+    {
+        if (parameter is LiveDnsItem item)
+        {
+            CopyText(item.Address);
+            return;
+        }
+
+        CopyText(parameter);
+    }
+
+    private void ExportPortScanResult()
+    {
+        if (_lastOpenPorts.Count == 0)
+        {
+            LastOperation = "Keine Portscan-Ergebnisse zum Exportieren.";
+            return;
+        }
+
+        var dlg = new Microsoft.Win32.SaveFileDialog
+        {
+            Filter = "CSV (*.csv)|*.csv|Text (*.txt)|*.txt",
+            FileName = "portscan-result"
+        };
+        if (dlg.ShowDialog() != true) return;
+
+        try
+        {
+            var lines = _lastOpenPorts
+                .OrderBy(p => p)
+                .Select(p =>
+                {
+                    var service = CommonPortNames.TryGetValue(p, out var n) ? n : "unknown";
+                    return $"{p};{service}";
+                });
+
+            var header = "port;service";
+            File.WriteAllLines(dlg.FileName, new[] { header }.Concat(lines), Encoding.UTF8);
+            PortScanExportPath = dlg.FileName;
+            LastOperation = "Portscan-Ergebnis exportiert.";
+        }
+        catch (Exception ex)
+        {
+            LastOperation = "Portscan-Export fehlgeschlagen.";
+            _log.Error("Portscan-Export", ex);
+        }
+    }
+
+    private async Task RunDiagnosticsAsync()
+    {
+        try
+        {
+            var sb = new StringBuilder();
+            sb.AppendLine($"Zeit: {DateTime.Now:yyyy-MM-dd HH:mm:ss}");
+            sb.AppendLine($"Adapter: {SelectedStatusAdapter?.DisplayLine ?? "—"}");
+            sb.AppendLine($"IPv4: {LiveIpv4}");
+            sb.AppendLine($"Subnetz: {LiveSubnetMask}");
+            sb.AppendLine($"Gateway: {LiveGateway}");
+            sb.AppendLine($"DNS: {LiveDns}");
+            sb.AppendLine($"DHCP: {LiveDhcp}");
+            sb.AppendLine($"Netzwerkprofil: {LiveNetworkCategory}");
+            sb.AppendLine();
+
+            if (TryExtractPingTarget(LiveGateway, out var gwPing, out _))
+            {
+                sb.AppendLine("Gateway-Ping:");
+                sb.AppendLine(await RunSinglePingSummaryAsync(gwPing));
+                sb.AppendLine();
+            }
+
+            var dnsList = ParseDnsAddresses(LiveDns);
+            if (dnsList.Count > 0)
+            {
+                sb.AppendLine("DNS-Ping:");
+                foreach (var dns in dnsList)
+                    sb.AppendLine(await RunSinglePingSummaryAsync(dns));
+                sb.AppendLine();
+            }
+
+            if (Settings.IncludeRouteTableInDiagnostics)
+            {
+                sb.AppendLine("Route table:");
+                sb.AppendLine(await ReadProcessOutputAsync("route", "print"));
+            }
+
+            DiagnosticsResult = sb.ToString().Trim();
+            if (Settings.AutoCopyDiagnosticsToClipboard)
+            {
+                try { System.Windows.Clipboard.SetText(DiagnosticsResult); }
+                catch { /* noop */ }
+            }
+
+            LastOperation = "Diagnosebericht erstellt.";
+        }
+        catch (Exception ex)
+        {
+            DiagnosticsResult = "Diagnose fehlgeschlagen: " + ex.Message;
+            LastOperation = "Diagnose fehlgeschlagen.";
+            _log.Error("Diagnose", ex);
+        }
+    }
+
+    private async Task<string> RunSinglePingSummaryAsync(string target)
+    {
+        try
+        {
+            using var ping = new Ping();
+            var timeout = Math.Clamp(Settings.PingTimeoutMs, 500, 15000);
+            var reply = await ping.SendPingAsync(target, timeout);
+            if (reply.Status == IPStatus.Success)
+                return $"{target}: OK ({reply.RoundtripTime} ms)";
+            return $"{target}: {reply.Status}";
+        }
+        catch (Exception ex)
+        {
+            return $"{target}: Fehler ({ex.Message})";
+        }
+    }
+
+    private async Task<string> ReadProcessOutputAsync(string fileName, string arguments)
+    {
+        try
+        {
+            var psi = new ProcessStartInfo
+            {
+                FileName = fileName,
+                Arguments = arguments,
+                UseShellExecute = false,
+                RedirectStandardOutput = true,
+                RedirectStandardError = true,
+                CreateNoWindow = true
+            };
+            using var p = Process.Start(psi);
+            if (p == null) return "(konnte Prozess nicht starten)";
+            var stdout = await p.StandardOutput.ReadToEndAsync();
+            var stderr = await p.StandardError.ReadToEndAsync();
+            await p.WaitForExitAsync();
+            if (!string.IsNullOrWhiteSpace(stderr))
+                return stdout + Environment.NewLine + stderr;
+            return stdout;
+        }
+        catch (Exception ex)
+        {
+            return "(Fehler: " + ex.Message + ")";
+        }
+    }
+
+    private async Task UndoLastApplyAsync()
+    {
+        if (_lastRollback?.Profile == null)
+        {
+            LastOperation = "Kein Rollback verfügbar.";
+            return;
+        }
+
+        var rollback = _lastRollback.Profile.Clone();
+        SelectedProfile = rollback;
+        var ok = await ApplySelectedAsync(skipConfirm: true);
+        LastOperation = ok ? "Rollback angewendet." : "Rollback fehlgeschlagen.";
+    }
+
+    private static List<string> ParseDnsAddresses(string value)
+    {
+        if (string.IsNullOrWhiteSpace(value) || value == "—")
+            return new List<string>();
+
+        var list = value
+            .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .Where(v => IPv4Validation.IsValidIpv4(v))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
+
+        return list;
+    }
 
     private void LoadProfiles()
     {
@@ -608,6 +1073,7 @@ public sealed class MainViewModel : ViewModelBase
                 var result = await _netCfg.ApplyProfileAsync(SelectedProfile, netshName);
                 if (result.Success)
                 {
+                    _lastRollback = new UndoableAppliedProfile { Profile = SelectedProfile.Clone() };
                     LastOperation = "OK: " + result.Message;
                     _log.Info($"Profil angewendet: {SelectedProfile.Name}");
                     _dialogs.ShowInformation(result.Message, "Erfolg");

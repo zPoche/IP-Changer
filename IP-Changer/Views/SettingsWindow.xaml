@@ -4,7 +4,7 @@
                  xmlns:mah="http://metro.mahapps.com/winfx/xaml/controls"
                  Title="Einstellungen"
                  TitleCharacterCasing="Normal"
-                 Height="430"
+                 Height="560"
                  Width="500"
                  WindowStartupLocation="CenterOwner"
                  ResizeMode="NoResize"
@@ -26,6 +26,18 @@
                       Margin="0,0,0,8" />
             <CheckBox Content="Beim Doppelklick auf ein Profil nicht nachfragen"
                       IsChecked="{Binding SkipDoubleClickApplyConfirmation}"
+                      Margin="0,0,0,16" />
+            <TextBlock Text="Ping-Anzahl (1-20)" Margin="0,0,0,4" />
+            <TextBox Text="{Binding PingCount, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,8" />
+            <TextBlock Text="Ping-Timeout in ms (500-15000)" Margin="0,0,0,4" />
+            <TextBox Text="{Binding PingTimeoutMs, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,8" />
+            <TextBlock Text="Portscan-Parallelität (1-200)" Margin="0,0,0,4" />
+            <TextBox Text="{Binding PortScanParallelism, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,12" />
+            <CheckBox Content="Routing-Tabelle in Diagnose aufnehmen"
+                      IsChecked="{Binding IncludeRouteTableInDiagnostics}"
+                      Margin="0,0,0,8" />
+            <CheckBox Content="Diagnosebericht automatisch in Zwischenablage kopieren"
+                      IsChecked="{Binding AutoCopyDiagnosticsToClipboard}"
                       Margin="0,0,0,16" />
             <TextBlock TextWrapping="Wrap" Margin="0,0,0,4">
                 Update-Quelle: GitHub-Repo (z. B. https://github.com/Benutzer/IP-Changer) oder direkte JSON-URL
