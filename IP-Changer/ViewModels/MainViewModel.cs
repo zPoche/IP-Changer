@@ -4,6 +4,7 @@ using System.Net;
 using System.Net.NetworkInformation;
 using System.Net.Sockets;
 using System.Text.Json;
+using System.Windows;
 using System.Windows.Input;
 using System.Windows.Threading;
 using ProfileIpSwitcher.Helpers;
@@ -76,6 +77,8 @@ public sealed class MainViewModel : ViewModelBase
         PingCommand = new AsyncRelayCommand(_ => PingAsync(), _ => CanPing);
         PortScanCommand = new AsyncRelayCommand(_ => PortScanAsync(), _ => CanPortScan);
         WakeOnLanCommand = new AsyncRelayCommand(_ => SendWakeOnLanAsync(), _ => CanWakeOnLan);
+        CopyTextCommand = new RelayCommand(CopyText, CanCopyText);
+        PingAddressCommand = new AsyncRelayCommand(PingAddressAsync, _ => !IsPinging);
 
         LoadProfiles();
         Settings = _settingsService.Load();
@@ -284,6 +287,7 @@ public sealed class MainViewModel : ViewModelBase
             {
                 Raise(nameof(CanPing));
                 ((AsyncRelayCommand)PingCommand).NotifyCanExecuteChanged();
+                ((AsyncRelayCommand)PingAddressCommand).NotifyCanExecuteChanged();
             }
         }
     }
@@ -405,8 +409,10 @@ public sealed class MainViewModel : ViewModelBase
     public ICommand CheckUpdatesCommand { get; }
     public ICommand OpenAboutCommand { get; }
     public ICommand PingCommand { get; }
+    public ICommand PingAddressCommand { get; }
     public ICommand PortScanCommand { get; }
     public ICommand WakeOnLanCommand { get; }
+    public ICommand CopyTextCommand { get; }
 
     public IReadOnlyList<NetworkProfile> GetFavoriteProfiles() =>
         Profiles.Where(p => p.IsFavorite).ToList();
@@ -781,6 +787,41 @@ public sealed class MainViewModel : ViewModelBase
         }
     }
 
+    private async Task PingAddressAsync(object? parameter)
+    {
+        if (!TryExtractPingTarget(parameter, out var pingTarget, out var error))
+        {
+            PingResult = error;
+            LastOperation = "Ping fehlgeschlagen.";
+            return;
+        }
+
+        PingTarget = pingTarget;
+        await PingAsync();
+    }
+
+    private bool CanCopyText(object? parameter) => TryExtractCopyText(parameter, out _);
+
+    private void CopyText(object? parameter)
+    {
+        if (!TryExtractCopyText(parameter, out var text))
+        {
+            LastOperation = "Kein Wert zum Kopieren.";
+            return;
+        }
+
+        try
+        {
+            Clipboard.SetText(text);
+            LastOperation = "In Zwischenablage kopiert.";
+        }
+        catch (Exception ex)
+        {
+            LastOperation = "Kopieren fehlgeschlagen.";
+            _log.Warn("Zwischenablage: " + ex.Message);
+        }
+    }
+
     private async Task PortScanAsync()
     {
         var target = PortScanTarget.Trim();
@@ -1002,6 +1043,45 @@ public sealed class MainViewModel : ViewModelBase
 
         macBytes = bytes;
         return true;
+    }
+
+    private static bool TryExtractCopyText(object? parameter, out string text)
+    {
+        text = parameter?.ToString()?.Trim() ?? string.Empty;
+        if (string.IsNullOrWhiteSpace(text)) return false;
+        if (text == "—") return false;
+        return true;
+    }
+
+    private static bool TryExtractPingTarget(object? parameter, out string target, out string error)
+    {
+        target = string.Empty;
+        error = string.Empty;
+        if (!TryExtractCopyText(parameter, out var raw))
+        {
+            error = "Kein gültiger Ping-Wert vorhanden.";
+            return false;
+        }
+
+        if (IPv4Validation.IsValidIpv4(raw))
+        {
+            target = raw;
+            return true;
+        }
+
+        var tokens = raw.Split(new[] { ',', ';', ' ', '\t', '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
+        foreach (var token in tokens)
+        {
+            var candidate = token.Trim();
+            if (IPv4Validation.IsValidIpv4(candidate))
+            {
+                target = candidate;
+                return true;
+            }
+        }
+
+        error = "Keine pingbare IPv4-Adresse gefunden.";
+        return false;
     }
 
     private static byte[] BuildMagicPacket(byte[] macBytes)

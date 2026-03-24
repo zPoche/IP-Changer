@@ -190,6 +190,8 @@
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition Width="Auto" MinWidth="132" />
                                             <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="Auto" />
+                                            <ColumnDefinition Width="Auto" />
                                         </Grid.ColumnDefinitions>
                                         <Grid.RowDefinitions>
                                             <RowDefinition Height="Auto" />
@@ -205,12 +207,48 @@
                                         <TextBlock Grid.Row="0" Grid.Column="1" Text="{Binding LiveOperationalStatus, Mode=OneWay}" Style="{StaticResource DetailValueStyle}" />
                                         <TextBlock Grid.Row="1" Grid.Column="0" Text="IPv4" Style="{StaticResource DetailLabelStyle}" />
                                         <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding LiveIpv4, Mode=OneWay}" Style="{StaticResource DetailValueStyle}" />
+                                        <Button Grid.Row="1" Grid.Column="2"
+                                                Content="Kopieren"
+                                                Command="{Binding CopyTextCommand}"
+                                                CommandParameter="{Binding LiveIpv4}"
+                                                Margin="10,0,0,8"
+                                                Padding="10,3" />
                                         <TextBlock Grid.Row="2" Grid.Column="0" Text="Subnetzmaske" Style="{StaticResource DetailLabelStyle}" />
                                         <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding LiveSubnetMask, Mode=OneWay}" Style="{StaticResource DetailValueStyle}" />
+                                        <Button Grid.Row="2" Grid.Column="2"
+                                                Content="Kopieren"
+                                                Command="{Binding CopyTextCommand}"
+                                                CommandParameter="{Binding LiveSubnetMask}"
+                                                Margin="10,0,0,8"
+                                                Padding="10,3" />
                                         <TextBlock Grid.Row="3" Grid.Column="0" Text="Gateway" Style="{StaticResource DetailLabelStyle}" />
                                         <TextBlock Grid.Row="3" Grid.Column="1" Text="{Binding LiveGateway, Mode=OneWay}" Style="{StaticResource DetailValueStyle}" />
+                                        <Button Grid.Row="3" Grid.Column="2"
+                                                Content="Kopieren"
+                                                Command="{Binding CopyTextCommand}"
+                                                CommandParameter="{Binding LiveGateway}"
+                                                Margin="10,0,0,8"
+                                                Padding="10,3" />
+                                        <Button Grid.Row="3" Grid.Column="3"
+                                                Content="Ping"
+                                                Command="{Binding PingAddressCommand}"
+                                                CommandParameter="{Binding LiveGateway}"
+                                                Margin="8,0,0,8"
+                                                Padding="10,3" />
                                         <TextBlock Grid.Row="4" Grid.Column="0" Text="DNS" Style="{StaticResource DetailLabelStyle}" />
                                         <TextBlock Grid.Row="4" Grid.Column="1" Text="{Binding LiveDns, Mode=OneWay}" Style="{StaticResource DetailValueStyle}" />
+                                        <Button Grid.Row="4" Grid.Column="2"
+                                                Content="Kopieren"
+                                                Command="{Binding CopyTextCommand}"
+                                                CommandParameter="{Binding LiveDns}"
+                                                Margin="10,0,0,8"
+                                                Padding="10,3" />
+                                        <Button Grid.Row="4" Grid.Column="3"
+                                                Content="Ping"
+                                                Command="{Binding PingAddressCommand}"
+                                                CommandParameter="{Binding LiveDns}"
+                                                Margin="8,0,0,8"
+                                                Padding="10,3" />
                                         <TextBlock Grid.Row="5" Grid.Column="0" Text="DHCP" Style="{StaticResource DetailLabelStyle}" />
                                         <TextBlock Grid.Row="5" Grid.Column="1" Text="{Binding LiveDhcp, Mode=OneWay}" Style="{StaticResource DetailValueStyle}" />
                                         <TextBlock Grid.Row="6" Grid.Column="0" Text="Netzwerkprofil" Style="{StaticResource DetailLabelStyle}" />
@@ -247,6 +285,8 @@
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition Width="Auto" MinWidth="132" />
                                             <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="Auto" />
+                                            <ColumnDefinition Width="Auto" />
                                         </Grid.ColumnDefinitions>
                                         <Grid.RowDefinitions>
                                             <RowDefinition Height="Auto" />
@@ -269,12 +309,48 @@
                                         <TextBlock Grid.Row="3" Grid.Column="1" Text="{Binding ProfilePreviewMode, Mode=OneWay}" Style="{StaticResource DetailValueStyle}" />
                                         <TextBlock Grid.Row="4" Grid.Column="0" Text="IPv4" Style="{StaticResource DetailLabelStyle}" />
                                         <TextBlock Grid.Row="4" Grid.Column="1" Text="{Binding ProfilePreviewIpv4, Mode=OneWay}" Style="{StaticResource DetailValueStyle}" />
+                                        <Button Grid.Row="4" Grid.Column="2"
+                                                Content="Kopieren"
+                                                Command="{Binding CopyTextCommand}"
+                                                CommandParameter="{Binding ProfilePreviewIpv4}"
+                                                Margin="10,0,0,8"
+                                                Padding="10,3" />
                                         <TextBlock Grid.Row="5" Grid.Column="0" Text="Subnetzmaske" Style="{StaticResource DetailLabelStyle}" />
                                         <TextBlock Grid.Row="5" Grid.Column="1" Text="{Binding ProfilePreviewSubnet, Mode=OneWay}" Style="{StaticResource DetailValueStyle}" />
+                                        <Button Grid.Row="5" Grid.Column="2"
+                                                Content="Kopieren"
+                                                Command="{Binding CopyTextCommand}"
+                                                CommandParameter="{Binding ProfilePreviewSubnet}"
+                                                Margin="10,0,0,8"
+                                                Padding="10,3" />
                                         <TextBlock Grid.Row="6" Grid.Column="0" Text="Gateway" Style="{StaticResource DetailLabelStyle}" />
                                         <TextBlock Grid.Row="6" Grid.Column="1" Text="{Binding ProfilePreviewGateway, Mode=OneWay}" Style="{StaticResource DetailValueStyle}" />
+                                        <Button Grid.Row="6" Grid.Column="2"
+                                                Content="Kopieren"
+                                                Command="{Binding CopyTextCommand}"
+                                                CommandParameter="{Binding ProfilePreviewGateway}"
+                                                Margin="10,0,0,8"
+                                                Padding="10,3" />
+                                        <Button Grid.Row="6" Grid.Column="3"
+                                                Content="Ping"
+                                                Command="{Binding PingAddressCommand}"
+                                                CommandParameter="{Binding ProfilePreviewGateway}"
+                                                Margin="8,0,0,8"
+                                                Padding="10,3" />
                                         <TextBlock Grid.Row="7" Grid.Column="0" Text="DNS" Style="{StaticResource DetailLabelStyle}" />
                                         <TextBlock Grid.Row="7" Grid.Column="1" Text="{Binding ProfilePreviewDns, Mode=OneWay}" Style="{StaticResource DetailValueStyle}" />
+                                        <Button Grid.Row="7" Grid.Column="2"
+                                                Content="Kopieren"
+                                                Command="{Binding CopyTextCommand}"
+                                                CommandParameter="{Binding ProfilePreviewDns}"
+                                                Margin="10,0,0,8"
+                                                Padding="10,3" />
+                                        <Button Grid.Row="7" Grid.Column="3"
+                                                Content="Ping"
+                                                Command="{Binding PingAddressCommand}"
+                                                CommandParameter="{Binding ProfilePreviewDns}"
+                                                Margin="8,0,0,8"
+                                                Padding="10,3" />
                                         <TextBlock Grid.Row="8" Grid.Column="0" Text="Favorit" Style="{StaticResource DetailLabelStyle}" />
                                         <TextBlock Grid.Row="8" Grid.Column="1" Text="{Binding ProfilePreviewFavorite, Mode=OneWay}" Style="{StaticResource DetailValueStyle}" />
                                     </Grid>
