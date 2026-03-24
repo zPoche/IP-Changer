@@ -28,13 +28,22 @@
                 <Setter Property="BorderBrush" Value="{DynamicResource MahApps.Brushes.Accent2}" />
             </Style>
 
+            <Style x:Key="App.Button.Subtle" TargetType="Button" BasedOn="{StaticResource MahApps.Styles.Button}">
+                <Setter Property="Foreground" Value="#FFF3F3F3" />
+                <Setter Property="FontWeight" Value="SemiBold" />
+                <Setter Property="Background" Value="{DynamicResource MahApps.Brushes.Gray8}" />
+                <Setter Property="BorderBrush" Value="{DynamicResource MahApps.Brushes.Gray6}" />
+                <Setter Property="Padding" Value="12,6" />
+                <Setter Property="MinHeight" Value="32" />
+            </Style>
+
             <!-- Gemeinsame UI-Bausteine (Karten, Überschriften) -->
             <Style x:Key="App.SectionCard" TargetType="Border">
-                <Setter Property="Background" Value="{DynamicResource MahApps.Brushes.Gray10}" />
+                <Setter Property="Background" Value="{DynamicResource MahApps.Brushes.Gray9}" />
                 <Setter Property="BorderBrush" Value="{DynamicResource MahApps.Brushes.Gray7}" />
                 <Setter Property="BorderThickness" Value="1" />
                 <Setter Property="CornerRadius" Value="10" />
-                <Setter Property="Padding" Value="18,14" />
+                <Setter Property="Padding" Value="18,16" />
                 <Setter Property="Margin" Value="0,0,0,16" />
                 <Setter Property="SnapsToDevicePixels" Value="True" />
             </Style>
