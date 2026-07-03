@@ -19,6 +19,11 @@
     <mah:MetroWindow.Resources>
         <c:InverseBooleanToVisibilityConverter x:Key="InverseBoolToVis" />
         <c:BooleanToVisibilityConverter x:Key="BoolToVis" />
+        <Style x:Key="CardActionButton" TargetType="Button" BasedOn="{StaticResource App.Button.Subtle}">
+            <Setter Property="Margin" Value="0,0,8,8" />
+            <Setter Property="Padding" Value="10,4" />
+            <Setter Property="MinWidth" Value="88" />
+        </Style>
         <Style x:Key="DetailLabelStyle" TargetType="TextBlock">
             <Setter Property="Opacity" Value="0.78" />
             <Setter Property="Margin" Value="0,0,14,8" />
@@ -30,6 +35,39 @@
             <Setter Property="Margin" Value="0,0,0,8" />
             <Setter Property="FontWeight" Value="SemiBold" />
             <Setter Property="FontSize" Value="13" />
+        </Style>
+        <Style x:Key="CardSectionDescription" TargetType="TextBlock">
+            <Setter Property="Opacity" Value="0.74" />
+            <Setter Property="Margin" Value="0,0,0,10" />
+            <Setter Property="TextWrapping" Value="Wrap" />
+            <Setter Property="FontSize" Value="12" />
+        </Style>
+        <Style x:Key="CategoryTabControl" TargetType="TabControl" BasedOn="{StaticResource MahApps.Styles.TabControl}">
+            <Setter Property="Margin" Value="0,4,0,0" />
+            <Setter Property="Background" Value="{DynamicResource MahApps.Brushes.Gray10}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource MahApps.Brushes.Gray7}" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="Padding" Value="4" />
+        </Style>
+        <Style x:Key="CategoryTabItem" TargetType="TabItem" BasedOn="{StaticResource MahApps.Styles.TabItem}">
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="FontSize" Value="13.5" />
+            <Setter Property="Padding" Value="18,8" />
+            <Setter Property="Margin" Value="0,0,6,0" />
+        </Style>
+        <Style x:Key="TopPingBannerBorder" TargetType="Border">
+            <Setter Property="CornerRadius" Value="8" />
+            <Setter Property="Padding" Value="12,8" />
+            <Setter Property="Margin" Value="0,0,0,12" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="Background" Value="#2E1F4D7A" />
+            <Setter Property="BorderBrush" Value="#FF5AAEFF" />
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding IsTopPingStatusError}" Value="True">
+                    <Setter Property="Background" Value="#33B64D4D" />
+                    <Setter Property="BorderBrush" Value="#FFD37B7B" />
+                </DataTrigger>
+            </Style.Triggers>
         </Style>
         <Style x:Key="ProfileListBox" TargetType="ListBox" BasedOn="{StaticResource MahApps.Styles.ListBox}">
             <Setter Property="BorderThickness" Value="1" />
@@ -85,29 +123,39 @@
                 <ColumnDefinition Width="*" />
             </Grid.ColumnDefinitions>
 
-            <DockPanel Grid.Column="0" Margin="0,0,14,0">
+            <DockPanel Grid.Column="0" Margin="0,0,16,0">
+                <TextBlock DockPanel.Dock="Top"
+                           Text="Profile"
+                           FontSize="17"
+                           FontWeight="SemiBold"
+                           Margin="2,0,0,8" />
                 <TextBox DockPanel.Dock="Top"
                          mah:TextBoxHelper.Watermark="Profile oder Adapter suchen…"
                          Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
-                         Margin="0,0,0,10" />
+                         Margin="0,0,0,10"
+                         Padding="10,6" />
                 <StackPanel DockPanel.Dock="Bottom" Orientation="Vertical" Margin="0,10,0,0">
                     <UniformGrid Columns="2" Margin="0,0,0,0">
                         <Button Content="Neu"
                                 Command="{Binding NewProfileCommand}"
                                 Margin="0,0,5,6"
-                                Padding="10,6" />
+                                Padding="10,6"
+                                Style="{StaticResource App.Button.Subtle}" />
                         <Button Content="Duplizieren"
                                 Command="{Binding DuplicateProfileCommand}"
                                 Margin="5,0,0,6"
-                                Padding="10,6" />
+                                Padding="10,6"
+                                Style="{StaticResource App.Button.Subtle}" />
                         <Button Content="Löschen"
                                 Command="{Binding DeleteProfileCommand}"
                                 Margin="0,0,5,0"
-                                Padding="10,6" />
+                                Padding="10,6"
+                                Style="{StaticResource App.Button.Subtle}" />
                         <Button Content="★ Favorit"
                                 Command="{Binding ToggleFavoriteCommand}"
                                 Margin="5,0,0,0"
-                                Padding="10,6" />
+                                Padding="10,6"
+                                Style="{StaticResource App.Button.Subtle}" />
                     </UniformGrid>
                 </StackPanel>
                 <ListBox ItemsSource="{Binding FilteredProfiles}"
@@ -154,11 +202,29 @@
                 </ListBox>
             </DockPanel>
 
-            <TabControl Grid.Column="1">
-                <TabItem Header="Übersicht">
+            <TabControl Grid.Column="1" Style="{StaticResource CategoryTabControl}">
+                <TabItem Header="Übersicht" Style="{StaticResource CategoryTabItem}">
                     <ScrollViewer VerticalScrollBarVisibility="Auto"
                                   HorizontalScrollBarVisibility="Disabled">
                         <StackPanel>
+                            <Border Style="{StaticResource TopPingBannerBorder}">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="*" />
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Text="PING"
+                                               FontWeight="Bold"
+                                               Opacity="0.92"
+                                               VerticalAlignment="Center"
+                                               Margin="0,0,10,0" />
+                                    <TextBlock Grid.Column="1"
+                                               Text="{Binding TopPingStatus}"
+                                               FontWeight="SemiBold"
+                                               TextWrapping="Wrap"
+                                               VerticalAlignment="Center" />
+                                </Grid>
+                            </Border>
                             <!-- Live-Adapter -->
                             <Border Style="{StaticResource App.SectionCard}">
                                 <StackPanel>
@@ -184,12 +250,15 @@
                                                 Margin="12,0,0,0"
                                                 VerticalAlignment="Center"
                                                 Padding="14,8"
-                                                Command="{Binding RefreshAdaptersCommand}" />
+                                                Command="{Binding RefreshAdaptersCommand}"
+                                                Style="{StaticResource App.Button.Subtle}" />
                                     </StackPanel>
                                     <Grid>
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition Width="Auto" MinWidth="132" />
                                             <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="Auto" />
+                                            <ColumnDefinition Width="Auto" />
                                         </Grid.ColumnDefinitions>
                                         <Grid.RowDefinitions>
                                             <RowDefinition Height="Auto" />
@@ -205,12 +274,42 @@
                                         <TextBlock Grid.Row="0" Grid.Column="1" Text="{Binding LiveOperationalStatus, Mode=OneWay}" Style="{StaticResource DetailValueStyle}" />
                                         <TextBlock Grid.Row="1" Grid.Column="0" Text="IPv4" Style="{StaticResource DetailLabelStyle}" />
                                         <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding LiveIpv4, Mode=OneWay}" Style="{StaticResource DetailValueStyle}" />
+                                        <Button Grid.Row="1" Grid.Column="2"
+                                                Content="Kopieren"
+                                                Command="{Binding CopyTextCommand}"
+                                                CommandParameter="{Binding LiveIpv4}"
+                                                Style="{StaticResource CardActionButton}" />
                                         <TextBlock Grid.Row="2" Grid.Column="0" Text="Subnetzmaske" Style="{StaticResource DetailLabelStyle}" />
                                         <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding LiveSubnetMask, Mode=OneWay}" Style="{StaticResource DetailValueStyle}" />
+                                        <Button Grid.Row="2" Grid.Column="2"
+                                                Content="Kopieren"
+                                                Command="{Binding CopyTextCommand}"
+                                                CommandParameter="{Binding LiveSubnetMask}"
+                                                Style="{StaticResource CardActionButton}" />
                                         <TextBlock Grid.Row="3" Grid.Column="0" Text="Gateway" Style="{StaticResource DetailLabelStyle}" />
                                         <TextBlock Grid.Row="3" Grid.Column="1" Text="{Binding LiveGateway, Mode=OneWay}" Style="{StaticResource DetailValueStyle}" />
+                                        <Button Grid.Row="3" Grid.Column="2"
+                                                Content="Kopieren"
+                                                Command="{Binding CopyTextCommand}"
+                                                CommandParameter="{Binding LiveGateway}"
+                                                Style="{StaticResource CardActionButton}" />
+                                        <Button Grid.Row="3" Grid.Column="3"
+                                                Content="Ping"
+                                                Command="{Binding PingAddressCommand}"
+                                                CommandParameter="{Binding LiveGateway}"
+                                                Style="{StaticResource CardActionButton}" />
                                         <TextBlock Grid.Row="4" Grid.Column="0" Text="DNS" Style="{StaticResource DetailLabelStyle}" />
                                         <TextBlock Grid.Row="4" Grid.Column="1" Text="{Binding LiveDns, Mode=OneWay}" Style="{StaticResource DetailValueStyle}" />
+                                        <Button Grid.Row="4" Grid.Column="2"
+                                                Content="Kopieren"
+                                                Command="{Binding CopyTextCommand}"
+                                                CommandParameter="{Binding LiveDns}"
+                                                Style="{StaticResource CardActionButton}" />
+                                        <Button Grid.Row="4" Grid.Column="3"
+                                                Content="Ping"
+                                                Command="{Binding PingAddressCommand}"
+                                                CommandParameter="{Binding LiveDns}"
+                                                Style="{StaticResource CardActionButton}" />
                                         <TextBlock Grid.Row="5" Grid.Column="0" Text="DHCP" Style="{StaticResource DetailLabelStyle}" />
                                         <TextBlock Grid.Row="5" Grid.Column="1" Text="{Binding LiveDhcp, Mode=OneWay}" Style="{StaticResource DetailValueStyle}" />
                                         <TextBlock Grid.Row="6" Grid.Column="0" Text="Netzwerkprofil" Style="{StaticResource DetailLabelStyle}" />
@@ -218,6 +317,43 @@
                                         <TextBlock Grid.Row="7" Grid.Column="0" Text="WLAN-SSID" Style="{StaticResource DetailLabelStyle}" />
                                         <TextBlock Grid.Row="7" Grid.Column="1" Text="{Binding LiveWifiSsid, Mode=OneWay}" Style="{StaticResource DetailValueStyle}" />
                                     </Grid>
+                                    <TextBlock Text="DNS-Server einzeln"
+                                               Style="{StaticResource CardSectionDescription}" />
+                                    <ItemsControl ItemsSource="{Binding LiveDnsItems}">
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate DataType="{x:Type models:LiveDnsItem}">
+                                                <StackPanel Orientation="Horizontal" Margin="0,0,0,6">
+                                                    <TextBlock Text="{Binding Address}" Width="180" VerticalAlignment="Center" />
+                                                    <Button Content="DNS kopieren"
+                                                            Command="{Binding DataContext.CopyLiveDnsItemCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                            CommandParameter="{Binding}"
+                                                            Style="{StaticResource CardActionButton}" />
+                                                    <Button Content="DNS ping"
+                                                            Command="{Binding DataContext.PingLiveDnsItemCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                            CommandParameter="{Binding}"
+                                                            Style="{StaticResource CardActionButton}" />
+                                                </StackPanel>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                    <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
+                                        <Button Content="Diagnose erstellen"
+                                                Command="{Binding RunDiagnosticsCommand}"
+                                                ToolTip="Erstellt Netzwerkdiagnose und kopiert sie optional in die Zwischenablage."
+                                                Style="{StaticResource App.Button.Subtle}" />
+                                        <Button Content="Letzte Änderung rückgängig"
+                                                Command="{Binding UndoLastApplyCommand}"
+                                                Margin="10,0,0,0"
+                                                Style="{StaticResource App.Button.Subtle}"
+                                                ToolTip="Wendet den zuletzt gesicherten Zustand wieder an." />
+                                    </StackPanel>
+                                    <TextBox Text="{Binding DiagnosticsResult, Mode=OneWay}"
+                                             Margin="0,8,0,0"
+                                             MinHeight="84"
+                                             MaxHeight="180"
+                                             IsReadOnly="True"
+                                             TextWrapping="Wrap"
+                                             VerticalScrollBarVisibility="Auto" />
                                 </StackPanel>
                             </Border>
 
@@ -247,6 +383,8 @@
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition Width="Auto" MinWidth="132" />
                                             <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="Auto" />
+                                            <ColumnDefinition Width="Auto" />
                                         </Grid.ColumnDefinitions>
                                         <Grid.RowDefinitions>
                                             <RowDefinition Height="Auto" />
@@ -269,12 +407,42 @@
                                         <TextBlock Grid.Row="3" Grid.Column="1" Text="{Binding ProfilePreviewMode, Mode=OneWay}" Style="{StaticResource DetailValueStyle}" />
                                         <TextBlock Grid.Row="4" Grid.Column="0" Text="IPv4" Style="{StaticResource DetailLabelStyle}" />
                                         <TextBlock Grid.Row="4" Grid.Column="1" Text="{Binding ProfilePreviewIpv4, Mode=OneWay}" Style="{StaticResource DetailValueStyle}" />
+                                        <Button Grid.Row="4" Grid.Column="2"
+                                                Content="Kopieren"
+                                                Command="{Binding CopyTextCommand}"
+                                                CommandParameter="{Binding ProfilePreviewIpv4}"
+                                                Style="{StaticResource CardActionButton}" />
                                         <TextBlock Grid.Row="5" Grid.Column="0" Text="Subnetzmaske" Style="{StaticResource DetailLabelStyle}" />
                                         <TextBlock Grid.Row="5" Grid.Column="1" Text="{Binding ProfilePreviewSubnet, Mode=OneWay}" Style="{StaticResource DetailValueStyle}" />
+                                        <Button Grid.Row="5" Grid.Column="2"
+                                                Content="Kopieren"
+                                                Command="{Binding CopyTextCommand}"
+                                                CommandParameter="{Binding ProfilePreviewSubnet}"
+                                                Style="{StaticResource CardActionButton}" />
                                         <TextBlock Grid.Row="6" Grid.Column="0" Text="Gateway" Style="{StaticResource DetailLabelStyle}" />
                                         <TextBlock Grid.Row="6" Grid.Column="1" Text="{Binding ProfilePreviewGateway, Mode=OneWay}" Style="{StaticResource DetailValueStyle}" />
+                                        <Button Grid.Row="6" Grid.Column="2"
+                                                Content="Kopieren"
+                                                Command="{Binding CopyTextCommand}"
+                                                CommandParameter="{Binding ProfilePreviewGateway}"
+                                                Style="{StaticResource CardActionButton}" />
+                                        <Button Grid.Row="6" Grid.Column="3"
+                                                Content="Ping"
+                                                Command="{Binding PingAddressCommand}"
+                                                CommandParameter="{Binding ProfilePreviewGateway}"
+                                                Style="{StaticResource CardActionButton}" />
                                         <TextBlock Grid.Row="7" Grid.Column="0" Text="DNS" Style="{StaticResource DetailLabelStyle}" />
                                         <TextBlock Grid.Row="7" Grid.Column="1" Text="{Binding ProfilePreviewDns, Mode=OneWay}" Style="{StaticResource DetailValueStyle}" />
+                                        <Button Grid.Row="7" Grid.Column="2"
+                                                Content="Kopieren"
+                                                Command="{Binding CopyTextCommand}"
+                                                CommandParameter="{Binding ProfilePreviewDns}"
+                                                Style="{StaticResource CardActionButton}" />
+                                        <Button Grid.Row="7" Grid.Column="3"
+                                                Content="Ping"
+                                                Command="{Binding PingAddressCommand}"
+                                                CommandParameter="{Binding ProfilePreviewDns}"
+                                                Style="{StaticResource CardActionButton}" />
                                         <TextBlock Grid.Row="8" Grid.Column="0" Text="Favorit" Style="{StaticResource DetailLabelStyle}" />
                                         <TextBlock Grid.Row="8" Grid.Column="1" Text="{Binding ProfilePreviewFavorite, Mode=OneWay}" Style="{StaticResource DetailValueStyle}" />
                                     </Grid>
@@ -283,7 +451,8 @@
                                             Command="{Binding EditProfileCommand}"
                                             HorizontalAlignment="Left"
                                             Margin="0,16,0,0"
-                                            Padding="14,8" />
+                                            Padding="14,8"
+                                            Style="{StaticResource App.Button.Subtle}" />
                                 </StackPanel>
                             </Border>
 
@@ -302,7 +471,7 @@
                                             Keine Administratorrechte: „Profil anwenden“ ist deaktiviert.
                                         </TextBlock>
                                         <TextBlock Text="Profil auf den gewählten Live-Adapter anwenden (netsh)."
-                                                   Opacity="0.7"
+                                                   Opacity="0.78"
                                                    TextWrapping="Wrap" />
                                     </StackPanel>
                                     <StackPanel Grid.Column="1"
@@ -329,7 +498,7 @@
                     </ScrollViewer>
                 </TabItem>
 
-                <TabItem Header="Werkzeuge">
+                <TabItem Header="Werkzeuge" Style="{StaticResource CategoryTabItem}">
                     <ScrollViewer VerticalScrollBarVisibility="Auto"
                                   HorizontalScrollBarVisibility="Disabled">
                         <StackPanel>
@@ -352,26 +521,44 @@
                                             <ColumnDefinition Width="*" />
                                             <ColumnDefinition Width="Auto" />
                                             <ColumnDefinition Width="Auto" />
+                                            <ColumnDefinition Width="Auto" />
                                         </Grid.ColumnDefinitions>
                                         <TextBox Grid.Column="0"
-                                                 Text="{Binding Tools.PingTarget, UpdateSourceTrigger=PropertyChanged}"
-                                                 mah:TextBoxHelper.Watermark="IPv4 oder Hostname (z. B. 8.8.8.8, google.de)"
+                                                 Text="{Binding PingTarget, UpdateSourceTrigger=PropertyChanged}"
+                                                 mah:TextBoxHelper.Watermark="IPv4 (z. B. 8.8.8.8)"
                                                  Margin="0,0,10,8" />
                                         <Button Grid.Column="1"
                                                 Content="Ping starten"
-                                                Command="{Binding Tools.PingCommand}"
-                                                IsEnabled="{Binding Tools.CanPing}"
+                                                Command="{Binding PingCommand}"
+                                                IsEnabled="{Binding CanPing}"
                                                 Padding="14,6"
-                                                Margin="0,0,10,8" />
+                                                Margin="0,0,10,8"
+                                                Style="{StaticResource App.Button.Subtle}" />
                                         <mah:ProgressRing Grid.Column="2"
                                                           Width="24"
                                                           Height="24"
-                                                          IsActive="{Binding Tools.IsPinging}"
+                                                          IsActive="{Binding IsPinging}"
                                                           VerticalAlignment="Center"
                                                           Margin="0,0,0,8"
-                                                          Visibility="{Binding Tools.IsPinging, Converter={StaticResource BoolToVis}}" />
+                                                          Visibility="{Binding IsPinging, Converter={StaticResource BoolToVis}}" />
+                                        <Button Grid.Column="3"
+                                                Content="Dauer-Ping"
+                                                Command="{Binding ContinuousPingCommand}"
+                                                IsEnabled="{Binding CanStartContinuousPing}"
+                                                Padding="12,6"
+                                                Margin="10,0,0,8"
+                                                Style="{StaticResource App.Button.Subtle}" />
                                     </Grid>
-                                    <TextBlock Text="{Binding Tools.PingResult, Mode=OneWay}"
+                                    <Button Content="Ping stoppen"
+                                            Command="{Binding StopPingCommand}"
+                                            IsEnabled="{Binding IsContinuousPinging}"
+                                            HorizontalAlignment="Left"
+                                            Margin="0,0,0,8"
+                                            Padding="12,6"
+                                            Style="{StaticResource App.Button.Subtle}" />
+                                    <TextBlock Text="Ping-Historie (letzte 20):" Opacity="0.75" Margin="0,0,0,4" />
+                                    <ListBox ItemsSource="{Binding PingHistory}" Height="92" Margin="0,0,0,8" />
+                                    <TextBlock Text="{Binding PingResult, Mode=OneWay}"
                                                Opacity="0.75"
                                                Margin="0,0,0,2"
                                                TextWrapping="Wrap" />
@@ -403,28 +590,40 @@
                                         </Grid.RowDefinitions>
                                         <TextBlock Grid.Row="0" Grid.Column="0" Text="Host / IPv4" Style="{StaticResource DetailLabelStyle}" />
                                         <TextBox Grid.Row="0" Grid.Column="1"
-                                                 Text="{Binding Tools.PortScanTarget, UpdateSourceTrigger=PropertyChanged}"
+                                                 Text="{Binding PortScanTarget, UpdateSourceTrigger=PropertyChanged}"
                                                  mah:TextBoxHelper.Watermark="z. B. 192.168.1.10 oder localhost"
                                                  Margin="0,0,0,8" />
                                         <TextBlock Grid.Row="1" Grid.Column="0" Text="Ports" Style="{StaticResource DetailLabelStyle}" />
                                         <TextBox Grid.Row="1" Grid.Column="1"
-                                                 Text="{Binding Tools.PortScanPorts, UpdateSourceTrigger=PropertyChanged}"
+                                                 Text="{Binding PortScanPorts, UpdateSourceTrigger=PropertyChanged}"
                                                  mah:TextBoxHelper.Watermark="z. B. 22,80,443 oder 8000-8010" />
                                     </Grid>
                                     <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
                                         <Button Content="Portscan starten"
-                                                Command="{Binding Tools.PortScanCommand}"
-                                                IsEnabled="{Binding Tools.CanPortScan}"
-                                                Padding="14,6" />
+                                                Command="{Binding PortScanCommand}"
+                                                IsEnabled="{Binding CanPortScan}"
+                                                Padding="14,6"
+                                                Style="{StaticResource App.Button.Subtle}" />
                                         <mah:ProgressRing Width="24"
                                                           Height="24"
-                                                          IsActive="{Binding Tools.IsPortScanning}"
+                                                          IsActive="{Binding IsPortScanning}"
                                                           VerticalAlignment="Center"
                                                           Margin="10,0,0,0"
-                                                          Visibility="{Binding Tools.IsPortScanning, Converter={StaticResource BoolToVis}}" />
+                                                          Visibility="{Binding IsPortScanning, Converter={StaticResource BoolToVis}}" />
+                                        <Button Content="Ergebnis exportieren"
+                                                Command="{Binding ExportPortScanResultCommand}"
+                                                Margin="10,0,0,0"
+                                                Padding="12,6"
+                                                Style="{StaticResource App.Button.Subtle}"
+                                                ToolTip="Exportiert offene Ports als TXT." />
                                     </StackPanel>
-                                    <TextBlock Text="{Binding Tools.PortScanResult, Mode=OneWay}"
+                                    <TextBlock Text="{Binding PortScanResult, Mode=OneWay}"
                                                Opacity="0.75"
+                                               TextWrapping="Wrap" />
+                                    <TextBlock Text="{Binding PortScanExportPath, Mode=OneWay}"
+                                               Opacity="0.6"
+                                               FontSize="11.5"
+                                               Margin="0,6,0,0"
                                                TextWrapping="Wrap" />
                                 </StackPanel>
                             </Border>
@@ -455,32 +654,54 @@
                                         </Grid.RowDefinitions>
                                         <TextBlock Grid.Row="0" Grid.Column="0" Text="MAC-Adresse" Style="{StaticResource DetailLabelStyle}" />
                                         <TextBox Grid.Row="0" Grid.Column="1"
-                                                 Text="{Binding Tools.WakeOnLanMac, UpdateSourceTrigger=PropertyChanged}"
+                                                 Text="{Binding WakeOnLanMac, UpdateSourceTrigger=PropertyChanged}"
                                                  mah:TextBoxHelper.Watermark="z. B. 00:11:22:33:44:55"
                                                  Margin="0,0,0,8" />
                                         <TextBlock Grid.Row="1" Grid.Column="0" Text="Broadcast" Style="{StaticResource DetailLabelStyle}" />
                                         <TextBox Grid.Row="1" Grid.Column="1"
-                                                 Text="{Binding Tools.WakeOnLanBroadcast, UpdateSourceTrigger=PropertyChanged}"
+                                                 Text="{Binding WakeOnLanBroadcast, UpdateSourceTrigger=PropertyChanged}"
                                                  mah:TextBoxHelper.Watermark="z. B. 192.168.1.255"
                                                  Margin="0,0,0,8" />
                                         <TextBlock Grid.Row="2" Grid.Column="0" Text="UDP-Port" Style="{StaticResource DetailLabelStyle}" />
                                         <TextBox Grid.Row="2" Grid.Column="1"
-                                                 Text="{Binding Tools.WakeOnLanPort, UpdateSourceTrigger=PropertyChanged}"
+                                                 Text="{Binding WakeOnLanPort, UpdateSourceTrigger=PropertyChanged}"
                                                  mah:TextBoxHelper.Watermark="z. B. 9" />
                                     </Grid>
                                     <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
                                         <Button Content="Magic Packet senden"
-                                                Command="{Binding Tools.WakeOnLanCommand}"
-                                                IsEnabled="{Binding Tools.CanWakeOnLan}"
-                                                Padding="14,6" />
+                                                Command="{Binding WakeOnLanCommand}"
+                                                IsEnabled="{Binding CanWakeOnLan}"
+                                                Padding="14,6"
+                                                Style="{StaticResource App.Button.Subtle}" />
                                         <mah:ProgressRing Width="24"
                                                           Height="24"
-                                                          IsActive="{Binding Tools.IsSendingWakeOnLan}"
+                                                          IsActive="{Binding IsSendingWakeOnLan}"
                                                           VerticalAlignment="Center"
                                                           Margin="10,0,0,0"
-                                                          Visibility="{Binding Tools.IsSendingWakeOnLan, Converter={StaticResource BoolToVis}}" />
+                                                          Visibility="{Binding IsSendingWakeOnLan, Converter={StaticResource BoolToVis}}" />
+                                        <Button Content="Als Ziel speichern"
+                                                Command="{Binding SaveWakeOnLanTargetCommand}"
+                                                Margin="10,0,0,0"
+                                                Padding="12,6"
+                                                Style="{StaticResource App.Button.Subtle}" />
                                     </StackPanel>
-                                    <TextBlock Text="{Binding Tools.WakeOnLanResult, Mode=OneWay}"
+                                    <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                                        <ComboBox Width="260"
+                                                  ItemsSource="{Binding WakeOnLanTargets}"
+                                                  SelectedItem="{Binding SelectedWakeOnLanTarget}"
+                                                  DisplayMemberPath="Name" />
+                                        <Button Content="Verwenden"
+                                                Command="{Binding UseWakeOnLanTargetCommand}"
+                                                Margin="10,0,0,0"
+                                                Padding="12,6"
+                                                Style="{StaticResource App.Button.Subtle}" />
+                                        <Button Content="Löschen"
+                                                Command="{Binding DeleteWakeOnLanTargetCommand}"
+                                                Margin="8,0,0,0"
+                                                Padding="12,6"
+                                                Style="{StaticResource App.Button.Subtle}" />
+                                    </StackPanel>
+                                    <TextBlock Text="{Binding WakeOnLanResult, Mode=OneWay}"
                                                Opacity="0.75"
                                                TextWrapping="Wrap" />
                                 </StackPanel>

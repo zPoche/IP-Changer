@@ -2,26 +2,69 @@
 
 Alle wichtigen Änderungen werden hier dokumentiert.
 
-## [1.1.1] – 2026-03-24
+## [1.1.4] – 2026-07-03
+
+### Zusammengeführt
+
+- Alle Feature-Branches (`cursor/ip-ping-funktion-b76c`, `cursor/startup-fenster-sichtbarkeit-37e9`, `cursor/development-environment-setup-243a`) in `main` integriert.
+
+### Neu (aus ip-ping-funktion-b76c)
+
+- Neuer Tab **Werkzeuge** mit IP-Ping, Portscanner (TCP) und Wake-on-LAN
+- Kopieren- und Quick-Ping-Aktionen für Adapter- und Profil-IP-Felder
+- DNS-Server einzeln pingen/kopieren
+- Netzwerkdiagnose und Rollback der letzten Profilanwendung
+- Dauer-Ping mit Historie, Portscan-Export, WoL-Ziele speichern
+- Prominenter Ping-Status-Banner im Übersicht-Tab
+
+### Behoben (aus main v1.1.1)
+
+- Netzwerkkategorie (Öffentlich/Privat/Domäne) – WMI `uint32` matchte nicht gegen `int`-Literale
+- Portscan: unbehandelte Task-Exceptions bei fehlgeschlagenen TCP-Verbindungen
+- Ping akzeptiert Hostnamen (DNS-Auflösung)
+- Adapter-Refresh läuft asynchron im Threadpool (UI friert nicht mehr ein)
+- Korruptionsschutz für `profiles.json` (Backup bei defekter Datei)
+- LoggingService als Singleton
+- MainViewModel implementiert `IDisposable` (Timer-Cleanup)
+
+## [1.1.3] – 2026-03-23
+
+### Geändert
+
+- Ping-Rückmeldung ist jetzt im Hauptbereich sofort sichtbar (prominenter Status-Banner mit ms bzw. Fehlerstatus), auch bei Gateway-/DNS-Ping.
+- Kategorien-Umschaltung (`Übersicht` / `Werkzeuge`) wurde deutlich hervorgehoben und wirkt jetzt stärker wie eine echte Bereichsnavigation.
+- Akzentfarbe wurde sichtbar aufgehellt, um auf dem Dark-Theme mehr Kontrast und Modernität zu erzeugen.
+
+## [1.1.2] – 2026-03-23
 
 ### Behoben
 
-- Netzwerkkategorie (Öffentlich/Privat/Domäne) wurde nie übersetzt – WMI `uint32` matchte nicht gegen `int`-Literale
-- Portscan: unbehandelte Task-Exceptions bei fehlgeschlagenen TCP-Verbindungen
+- DNS-Einzelaktionen im Live-Bereich funktionieren wieder zuverlässig (per-item Ping/Kopieren auf synchronisierter DNS-Liste).
+- Portscan-Export ist wieder nutzbar: offene Ports werden korrekt erfasst und der Export-Button dynamisch aktiviert.
+- Tray-Menü wird bei Änderungen der Wake-on-LAN-Ziele sofort aktualisiert (ohne Neustart).
+- Rollback verwendet einen echten Snapshot des Adapterzustands vor der Profilanwendung.
 
-### Verbessert
+### Geändert
 
-- Ping akzeptiert jetzt auch Hostnamen (DNS-Auflösung wie Portscan)
-- Adapter-Refresh läuft asynchron im Threadpool (UI friert nicht mehr ein)
-- Korruptionsschutz für `profiles.json` (Backup bei defekter Datei)
-- LoggingService als Singleton (eine gemeinsame Instanz)
-- MainViewModel implementiert `IDisposable` (Timer-Cleanup)
+- Tool-Einstellungen wirken jetzt zur Laufzeit:
+  - `PingCount` und `PingTimeoutMs` steuern den Ping-Lauf direkt.
+  - `PortScanParallelism` steuert den parallelen Portscan.
+- Letzte Tool-Eingaben (Ping/Portscan/WoL) werden konsistent gespeichert und erneut geladen.
+- UI-Polish für bessere Lesbarkeit und modernere, einheitliche Darstellung.
 
-### Aufgeräumt
+## [1.1.0] – 2026-03-23
 
-- Werkzeuge (Ping, Portscan, WoL) in eigenes `ToolsViewModel` extrahiert
-- `UpdateCheckResult` in eigene Datei verschoben
-- Unbenutzte `WinsServers`-Eigenschaft und leeres `<ApplicationIcon />`-Tag entfernt
+### Neu
+
+- Neuer Tab **Werkzeuge** mit drei Netzwerktools:
+  - **IP-Ping** (IPv4-Test mit Laufzeit/Statusanzeige)
+  - **Portscanner (TCP)** mit Portlisten und Portbereichen
+  - **Wake-on-LAN** (Magic Packet via Broadcast + UDP-Port)
+
+### Geändert
+
+- Hauptbereich auf **Tab-Navigation** umgestellt: `Übersicht` (Adapter/Profil/Anwenden) und `Werkzeuge` (Diagnose-Tools).
+- Ping-Funktion aus dem Live-Adapter-Bereich in den Werkzeug-Tab verschoben.
 
 ## [1.0.9] – 2026-03-23
 
@@ -45,7 +88,7 @@ Alle wichtigen Änderungen werden hier dokumentiert.
 
 ### Behoben
 
-- Nach erfolgreichem Profil anwenden: kurze Verzögerung, dann Adapter-Refresh, damit der Live-Bereich (z. B. DHCP) mit WMI wieder zur echten Konfiguration passt
+- Nach erfolgreichem Profil anwenden: kurze Verzögerung, dann Adapter-Refresh, damit der Live-Bereich (z. B. DHCP) mit WMI wieder zur echten Konfiguration passt
 
 ## [1.0.1] – 2026-03-20
 

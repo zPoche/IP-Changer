@@ -57,6 +57,7 @@ public partial class MainWindow
             _viewModel = new MainViewModel(_log, settingsService, persistence, adapters, netCfg, updates, dialogs);
             DataContext = _viewModel;
             _viewModel.ProfilesChanged += (_, _) => RebuildTrayMenu();
+            _viewModel.ToolTargetsChanged += (_, _) => RebuildTrayMenu();
 
             InitializeTrayIcon();
             RebuildTrayMenu();
@@ -131,6 +132,30 @@ public partial class MainWindow
                     _notifyIcon!.ShowBalloonTip(6000, "Fehler", ex.Message, ToolTipIcon.Error);
                 }
             });
+        }
+
+        var wolTargets = _viewModel.WakeOnLanTargets.ToList();
+        if (wolTargets.Count > 0)
+        {
+            menu.Items.Add(new ToolStripSeparator());
+            menu.Items.Add("Werkzeuge");
+            foreach (var t in wolTargets)
+            {
+                var target = t;
+                menu.Items.Add($"⚡ WOL {target.Name}", null, async (_, _) =>
+                {
+                    try
+                    {
+                        var sent = await _viewModel.SendWakeOnLanFromTrayAsync(target);
+                        if (sent)
+                            _notifyIcon!.ShowBalloonTip(3500, "IP-Changer", $"WOL gesendet: {target.Name}", ToolTipIcon.Info);
+                    }
+                    catch (Exception ex)
+                    {
+                        _notifyIcon!.ShowBalloonTip(6000, "Fehler", ex.Message, ToolTipIcon.Error);
+                    }
+                });
+            }
         }
 
         menu.Items.Add(new ToolStripSeparator());
